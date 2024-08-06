@@ -1,0 +1,11 @@
+Flask==3.0.0 
+Flask-DebugToolbar==0.13.1
+Flask-Login==0.6.3
+Flask-Migrate==4.0.5
+mysql-connector==2.2.9
+mysql-connector-python==9.0.0
+requests==2.31.0
+requests-file==2.1.0
+requests-toolbelt==1.0.0
+pandas==2.2.2
+openpyxl==3.1.5

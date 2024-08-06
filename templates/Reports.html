@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports Page</title>
+    <link rel="icon" type="image/x-icon" href="/static/images/Transactions_Icon.png">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
+</head>
+<body>
+    <div class="navbar">
+        <a href="{{ url_for('dashboard') }}"><button>Dashboard</button></a>
+        <a href="{{ url_for('transactions') }}"><button>Transactions</button></a>
+        <a href="{{ url_for('reports') }}"><button class="active">Reports</button></a>
+    </div>
+    <div id="messageBoxContainer">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ 'message' if category == 'message' else 'error' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="sub-navbar">
+        <div id="filterRow" class="filter-row"></div>
+    </div>
+    <div class="fixed-table-container">
+        <div class="table-container">
+            <div id="hot"></div>
+        </div>
+    </div>
+    <div class="fixed-button-container">
+        <form id="downloadForm" action="{{ url_for('download_filtered') }}" method="post">
+            <input type="hidden" id="filtersInput" name="filters" />
+            <button type="submit" class="fixed-button submit-button">Download</button>
+        </form>
+        <div id="rowCount" class="fixed-text" style="bottom: 10px; right: 100px;">Row Count: 0</div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var hot;
+            var container = document.getElementById('hot');
+
+            fetch('/dropdown_data')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        initializeFilters(result.data);
+                        initializeHandsontable([]);
+                    } else {
+                        console.error('Error fetching dropdown data:', result.message);
+                    }
+                });
+
+                function initializeFilters(data) {
+                const filterRow = document.getElementById('filterRow');
+                const columns = [
+                    { id: 'dateFilter', type: 'date', placeholder: 'YYYY/MM/DD', label: 'Date' },
+                    { id: 'segmentFilter', type: 'select', options: data.segment, label: 'Segment' },
+                    { id: 'typeFilter', type: 'select', options: data.type, label: 'Type' },
+                    { id: 'subTypeFilter', type: 'select', options: data.sub_type, label: 'Sub Type' },
+                    { id: 'categoryFilter', type: 'select', options: data.category, label: 'Category' },
+                    { id: 'subCategoryFilter', type: 'select', options: data.sub_category, label: 'Sub Category' },
+                    { id: 'detailsFilter', type: 'select', options: data.details, label: 'Details' },
+                    { id: 'notesFilter', type: 'select', options: data.notes, label: 'Notes' },
+                    { id: 'subNotesFilter', type: 'select', options: data.sub_notes, label: 'Sub Notes' },
+                    { id: 'transactionDescriptionFilter', type: 'select', options: data.transaction_description, label: 'Transaction Description' },
+                    { id: 'countryFilter', type: 'select', options: data.country, label: 'Country Used' },
+                    { id: 'accountFilter', type: 'select', options: data.account_name, label: 'Account Name' },
+                    { id: 'currencyFilter', type: 'select', options: data.currency, label: 'Currency' },
+                    { id: 'payeerFilter', type: 'select', options: data.account_name, label: 'Payeer' },
+                    { id: 'paidToFilter', type: 'select', options: data.account_name.concat(data.member_name), label: 'Paid To' },
+                    { id: 'amountFilter', type: 'select', options: data.amount, label: 'Amount' }
+                ];
+
+                columns.forEach(col => {
+                    const filterElement = document.createElement('div');
+                    filterElement.className = 'filter-element';
+
+                    const label = document.createElement('label');
+                    label.textContent = col.label;
+                    label.htmlFor = col.id;
+                    filterElement.appendChild(label);
+
+                    if (col.type === 'select') {
+                        const select = document.createElement('select');
+                        select.id = col.id;
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'All';
+                        select.appendChild(defaultOption);
+                        col.options.forEach(option => {
+                            const opt = document.createElement('option');
+                            opt.value = option;
+                            opt.textContent = option;
+                            select.appendChild(opt);
+                        });
+                        select.addEventListener('change', fetchFilteredData);
+                        filterElement.appendChild(select);
+                    } else if (col.type === 'date') {
+                        const input = document.createElement('input');
+                        input.id = col.id;
+                        input.type = 'date';  // Ensure the type is set to 'date'
+                        input.placeholder = col.placeholder || '';
+                        input.addEventListener('input', fetchFilteredData);
+                        filterElement.appendChild(input);
+                    } else {
+                        const input = document.createElement('input');
+                        input.id = col.id;
+                        input.type = 'text';
+                        input.placeholder = col.placeholder || '';
+                        input.addEventListener('input', fetchFilteredData);
+                        filterElement.appendChild(input);
+                    }
+                    filterRow.appendChild(filterElement);
+                });
+}
+
+            function initializeHandsontable(data) {
+                hot = new Handsontable(container, {
+                    data: data,
+                    colHeaders: [
+                        'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 'Sub Notes', 'Transaction Description',
+                        'Country Used', 'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
+                    ],
+                    columns: [
+                        { data: 'date', type: 'date', dateFormat: 'YYYY/MM/DD' },
+                        { data: 'segment' },
+                        { data: 'type' },
+                        { data: 'sub_type' },
+                        { data: 'category' },
+                        { data: 'sub_category' },
+                        { data: 'details' },
+                        { data: 'notes' },
+                        { data: 'sub_notes' },
+                        { data: 'transaction_description'},
+                        { data: 'country_used' },
+                        { data: 'account_name' },
+                        { data: 'currency' },
+                        { data: 'payeer' },
+                        { data: 'paid_to' },
+                        { data: 'amount', type: 'numeric' }
+                    ],
+                    manualColumnResize: true,
+                    filters: true,
+                    dropdownMenu: ['filter_by_value', 'filter_action_bar'],
+                    licenseKey: 'non-commercial-and-evaluation',
+                    manualColumnMove: true,
+                    rowHeaders: true,
+                    columnSorting: true,
+                    multiSelect: true,
+                    fillHandle: true,
+                    height: "50",
+                    stretchH: 'all',
+                    manualColumnFreeze: true,
+                    contextMenu: true,
+                    height: 'auto',
+                    wordWrap: false,
+                });
+            }
+
+            function fetchFilteredData() {
+                const filters = {
+                    date: document.getElementById('dateFilter').value,
+                    segment: document.getElementById('segmentFilter').value,
+                    type: document.getElementById('typeFilter').value,
+                    sub_type: document.getElementById('subTypeFilter').value,
+                    category: document.getElementById('categoryFilter').value,
+                    sub_category: document.getElementById('subCategoryFilter').value,
+                    details: document.getElementById('detailsFilter').value,
+                    notes: document.getElementById('notesFilter').value,
+                    sub_notes: document.getElementById('subNotesFilter').value,
+                    transaction_description: document.getElementById('transactionDescriptionFilter').value,
+                    country: document.getElementById('countryFilter').value,
+                    account_name: document.getElementById('accountFilter').value,
+                    currency: document.getElementById('currencyFilter').value,
+                    payeer: document.getElementById('payeerFilter').value,
+                    paid_to: document.getElementById('paidToFilter').value,
+                    amount: document.getElementById('amountFilter').value
+                };
+
+                fetch('/filter_transactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(filters)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        console.log(result.data)
+                        hot.loadData(result.data);
+                        updateRowCount(result.data.length);
+                        document.getElementById('filtersInput').value = JSON.stringify(filters);
+                    } else {
+                        console.error('Error fetching filtered data:', result.message);
+                    }
+                });
+            }
+
+            function updateRowCount(count) {
+                document.getElementById('rowCount').textContent = `Row Count: ${count}`;
+            }
+
+            function showMessage(message, type) {
+                if (message) {
+                    const messageBoxContainer = document.getElementById('messageBoxContainer');
+                    const newMessageBox = document.createElement('div');
+                    newMessageBox.textContent = message;
+                    newMessageBox.classList.add(type === 'error' ? 'error' : 'message');
+                    messageBoxContainer.appendChild(newMessageBox);
+                    setTimeout(() => {
+                        newMessageBox.remove();
+                    }, 5000);  // Display for 5 seconds
+                }
+            }
+        });
+    </script>
+</body>
+</html>

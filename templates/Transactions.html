@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" type="image/x-icon" href="/static/images/Transactions_Icon.png">
+    <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/css/pikaday.min.css">
+
+    <style>
+        .greyRow {
+            background-color: #f2f2f2 !important;
+        }
+        .fixed-table-container {
+            width: 100%;
+            /* height: 800px; */
+            margin: 0 auto; /* Center the container */
+            overflow: auto;
+            min-height: 200px;
+        }
+        #hot {
+            width: 100%;
+            height: 800px;
+            min-height: 200px;
+            
+
+        }
+        /* .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #navigationButtons {
+            display: flex;
+            justify-content: space-between;
+        }
+        #confirmButton {
+            display: none;
+        } */
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{{ url_for('dashboard') }}"><button>Dashboard</button></a>
+        <a href="{{ url_for('transactions') }}"><button class="active">Transactions</button></a>
+        <a href="{{ url_for('reports') }}"><button>Reports</button></a>
+    </div>
+    <div id="messageBoxContainer">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ 'message' if category == 'message' else 'error' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="sub-navbar">
+            <button onclick="callUpdateTransactionsTemp()">Autofill</button>
+
+        <a href="{{ url_for('download_file') }}" onclick="showMessage('File downloaded successfully!', 'message');"><button>Download</button></a>
+        <button id="uploadBtn">Upload</button>
+    </div>
+    <div class="fixed-table-container border">
+        <div id="hot"></div>
+    </div>
+    <div class="">
+        <a href="{{ url_for('template_download') }}" onclick="showMessage('Template downloaded successfully!', 'message');"><button class="fixed-button template-button">Template</button></a>
+        <button class="fixed-button clear-button" onclick="clearTable()">Clear Table</button>
+        <form action="{{ url_for('finalize_transactions') }}" method="get">
+            <button class="fixed-button submit-button" type="submit">Submit</button>
+        </form>
+        <div id="rowCount" class="fixed-text" style="bottom: 10px; right: 100px;">Row Count: {{ rows|length }}</div>
+    </div>
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="upload-section">
+                <form method="POST" enctype="multipart/form-data" style="display: flex; justify-content: space-between; width: 100%;" action="{{ url_for('transactions') }}">
+                    <input class="file-input" type="file" name="file" accept=".csv">
+                    <input class="upload-btn" type="submit" value="Upload Excel">
+                </form>
+                <form style="display: flex; justify-content: space-between; width: 100%;" onsubmit="event.preventDefault(); addRow();">
+                    <input class="input__field" type="number" id="addrows" name="addrows" placeholder="Choose Rows to Add" min="1">
+                    <input class="upload-btn" type="submit" value="Upload Manual">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="newDetailsPopup" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeNewDetailsPopup()">&times;</span>
+            <div id="newDetailsContent"></div>
+            <div id="navigationButtons">
+                <button onclick="prevDetail()">Back</button>
+                <button onclick="nextDetail()">Next</button>
+            </div>
+            <button id="confirmButton" onclick="showConfirmPopup()">Confirm</button>
+        </div>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeConfirmationModal()">&times;</span>
+            <h3>Confirm Submission</h3>
+            <p>Are you sure you want to submit the following descriptions?</p>
+            <ul id="confirmDescriptions"></ul>
+            <div>
+                <button onclick="cancelSubmission()">Cancel</button>
+                <button onclick="confirmSubmission()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/scripts.js"></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var data = {{ rows|tojson|safe }};
+            var dropdownData = {};
+    
+            // Fetch dropdown data
+            fetch('/dropdown_data')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        dropdownData = result.data;
+                        initializeHandsontable(data, dropdownData);
+                    } else {
+                        console.error('Error fetching dropdown data:', result.message);
+                        initializeHandsontable(data, NaN);
+
+                    }
+                });
+    
+            function initializeHandsontable(data, dropdownData) {
+                var container = document.getElementById('hot');
+                var hot = new Handsontable(container, {
+                    data: data,
+                    colHeaders: [
+                        'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 'Sub Notes', 'Transaction Description',
+                        'Country Withdraw', 'Country Used', 'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
+                    ],
+                    
+                    columns: [
+                        {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
+                        {data: 'segment', type: 'dropdown', source: dropdownData.segment ,allowInvalid: false},
+                        {data: 'type', type: 'dropdown', source: dropdownData.type,allowInvalid: false},
+                        {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type,allowInvalid: false},
+                        {data: 'category', type: 'dropdown', source: dropdownData.category,allowInvalid: false},
+                        {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete',validator: 'autocomplete',source: dropdownData.sub_category},
+                        {data: 'details'},
+                        {data: 'notes'},
+                        {data: 'sub_notes'},
+                        {data: 'transaction_description'},
+                        {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
+                        {data: 'country_used', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
+                        {data: 'account_name', type: 'dropdown', source: dropdownData.account_name,allowInvalid: false},
+                        {data: 'currency', type: 'dropdown', source: dropdownData.currency,allowInvalid: false},
+                        {data: 'payeer', type: 'dropdown', source: dropdownData.account_name},
+                        {data: 'paid_to', type: 'dropdown', source: dropdownData.account_name.concat(dropdownData.member_name)},
+                        {data: 'amount', type: 'numeric'}
+                    ],
+                    manualColumnResize: true,
+                    filters: true,
+                    dropdownMenu: ['filter_by_value', 'filter_action_bar'],
+                    licenseKey: 'non-commercial-and-evaluation',
+                    manualColumnMove: true,
+                    rowHeaders: true,
+                    columnSorting: true,
+                    multiSelect: true,
+                    fillHandle: true,
+                    height: "500",
+                    
+                    stretchH: 'all',
+                    manualColumnFreeze: true,
+                    contextMenu: {
+                        items: {
+                            'row_above': {name: 'Insert a row above'},
+                            'row_below': {name: 'Insert a row below'},
+                            'hsep1': '---------',
+                            'remove_row': {name: 'Remove the selected row'},
+                            'hsep2': '---------',
+                            'undo': {name: 'Undo the last action'},
+                            'redo': {name: 'Redo the last action'},
+                            'hsep3': '---------',
+                            'cut': {name: 'Cut'},
+                            'copy': {name: 'Copy'},
+                            'hsep4': '---------',
+                            'freeze_column': {name: 'Freeze the selected column'},
+                            'unfreeze_column': {name: 'Unfreeze the selected column'}
+                        }
+                    },
+                    height: 'auto',
+                    cells: function(row, col) {
+                        let cp = {};
+                        if (row % 2 === 0) {
+                            cp.className = 'greyRow';
+                        }
+                        return cp;
+                        
+                    },
+                    afterChange: function (changes, source) {
+                        if (source === 'loadData') {
+                            return;
+                        }
+                        changes.forEach(function ([row, col, oldValue, newValue]) {
+                            if (oldValue !== newValue) {
+                                let rowData = hot.getSourceDataAtRow(row);
+                                
+                                if (rowData) {
+                                    let payload = {
+                                        id: rowData.transaction_id,
+                                        field: hot.colToProp(col),
+                                        value: newValue
+                                    };
+                                    $.ajax({
+                                        url: '/update_transaction',
+                                        type: 'POST',
+                                        contentType: 'application/json',
+                                        data: JSON.stringify(payload),
+                                        success: function (response) {
+                                            console.log('Update successful:', response);
+                                        },
+                                        error: function (error) {
+                                            console.error('Update failed:', error);
+                                        }
+                                    });
+                                } else {
+                                    console.error('Row data is undefined for row:', row);
+                                }
+                            }
+                        });
+                    },
+                    afterCreateRow: function (index, amount) {
+                        // Delay to ensure the row is fully created before setting data
+                        setTimeout(function() {
+                            let newRowData = {};
+                            const columns = hot.getColHeader();
+    
+                            columns.forEach(col => {
+                                newRowData[hot.propToCol(col)] = null;
+                            });
+    
+                            hot.setDataAtRowProp(index, Object.keys(newRowData), Object.values(newRowData));
+                            $.ajax({
+                                url: '/insert_transaction',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify(newRowData),
+                                success: function (response) {
+                                    console.log('Insert successful:', response);
+                                },
+                                error: function (error) {
+                                    console.error('Insert failed:', error);
+                                }
+                            });
+                        }, 0);
+                    }
+                });
+            }
+        });
+    </script>
+    
+</body>
+</html>

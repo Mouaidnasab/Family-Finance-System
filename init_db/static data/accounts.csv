@@ -1,0 +1,286 @@
+﻿Account_id,Customer_id,Name,Country,Account_Type,Currency
+1001,1,SNB Mustafa,Saudi Arabia,SNB,SR
+1002,1,SNB Credit Mustafa,Saudi Arabia,SNB Credit,SR
+1003,1,STC Pay Mustafa,Saudi Arabia,STC Pay,SR
+1004,1,Alinma Pay Mustafa,Saudi Arabia,Alinma Pay,SR
+1005,1,Tiqmo Mustafa,Saudi Arabia,Tiqmo,SR
+1006,1,Cash Mustafa,General,Cash,SR
+1007,1,Cash Mustafa,General,Cash,TRY
+1008,1,Cash Mustafa,General,Cash,BGN
+1009,1,Cash Mustafa,General,Cash,SRY
+1010,1,Cash Mustafa,General,Cash,USD
+1011,1,Cash Mustafa,General,Cash,EUR
+1012,1,IS Bank Mustafa 78,Turkey,IS Bank,TRY
+1013,1,IS Bank Mustafa 73,Turkey,IS Bank,TRY
+1014,1,IS Bank Credit Mustafa,Turkey,IS Bank Credit,TRY
+1015,1,IS Bank Mustafa,Turkey,IS Bank,USD
+1016,1,IS Bank Mustafa,Turkey,IS Bank,EUR
+1017,1,AKBank Mustafa,Turkey,AKBank,TRY
+1018,1,AKBank Mustafa,Turkey,AKBank,USD
+1019,1,AKBank Mustafa,Turkey,AKBank,EUR
+1020,1,AKBank Credit Mustafa,Turkey,AKBank Credit,TRY
+1021,1,Ziraat Bank Mustafa,Turkey,Ziraat Bank,TRY
+1022,1,Ziraat Bank Mustafa,Turkey,Ziraat Bank,USD
+1023,1,Ziraat Bank Mustafa,Turkey,Ziraat Bank,EUR
+1024,1,Ziraat Bank Credit Mustafa,Turkey,Ziraat Bank Credit,TRY
+1025,1,Kuveyt Turk Bank Mustafa,Turkey,Kuveyt Turk Bank,TRY
+1026,1,Kuveyt Turk Bank Mustafa,Turkey,Kuveyt Turk Bank,USD
+1027,1,Kuveyt Turk Bank Mustafa,Turkey,Kuveyt Turk Bank,EUR
+1028,1,Kuveyt Turk Bank Credit Mustafa,Turkey,Kuveyt Turk Bank Credit,TRY
+1029,1,DSK Bank Mustafa,Bulgaria,DSK Bank,USD
+1030,1,DSK Bank Mustafa,Bulgaria,DSK Bank,EUR
+1031,1,DSK Bank Mustafa,Bulgaria,DSK Bank,BGN
+1032,1,DSK Bank Credit Mustafa,Bulgaria,DSK Bank Credit,BGN
+1033,1,QNB Bank Mustafa,Syria,QNB Bank,SYR
+1034,1,SIIB Bank Mustafa,Syria,SIIB Bank,SYR
+2001,2,SNB Mohamad,Saudi Arabia,SNB,SR
+2002,2,SNB Credit Mohamad,Saudi Arabia,SNB Credit,SR
+2003,2,STC Pay Mohamad,Saudi Arabia,STC Pay,SR
+2004,2,Alinma Pay Mohamad,Saudi Arabia,Alinma Pay,SR
+2005,2,Tiqmo Mohamad,Saudi Arabia,Tiqmo,SR
+2006,2,SAB Mohamad,Saudi Arabia,SAB,SR
+2007,2,BSF Mohamad,Saudi Arabia,BSF,SR
+2008,2,BSF Credit Mohamad,Saudi Arabia,BSF Credit,SR
+2009,2,BSF Credit Mohamad,Saudi Arabia,SAB Credit,SR
+2010,2,Cash Mohamad,General,Cash,SR
+2011,2,Cash Mohamad,General,Cash,TRY
+2012,2,Cash Mohamad,General,Cash,BGN
+2013,2,Cash Mohamad,General,Cash,SRY
+2014,2,Cash Mohamad,General,Cash,USD
+2015,2,Cash Mohamad,General,Cash,EUR
+2016,2,IS Bank Mohamad,Turkey,IS Bank,TRY
+2017,2,IS Bank Credit Mohamad,Turkey,IS Bank Credit,TRY
+2018,2,IS Bank Mohamad,Turkey,IS Bank,USD
+2019,2,IS Bank Mohamad,Turkey,IS Bank,EUR
+2020,2,AKBank Mohamad,Turkey,AKBank,TRY
+2021,2,AKBank Mohamad,Turkey,AKBank,USD
+2022,2,AKBank Mohamad,Turkey,AKBank,EUR
+2023,2,AKBank Credit Mohamad,Turkey,AKBank Credit,TRY
+2024,2,Ziraat Bank Mohamad,Turkey,Ziraat Bank,TRY
+2025,2,Ziraat Bank Mohamad,Turkey,Ziraat Bank,USD
+2026,2,Ziraat Bank Mohamad,Turkey,Ziraat Bank,EUR
+2027,2,Ziraat Bank Credit Mohamad,Turkey,Ziraat Bank Credit,TRY
+2028,2,Kuveyt Turk Bank Mohamad,Turkey,Kuveyt Turk Bank,TRY
+2029,2,Kuveyt Turk Bank Mohamad,Turkey,Kuveyt Turk Bank,USD
+2030,2,Kuveyt Turk Bank Mohamad,Turkey,Kuveyt Turk Bank,EUR
+2031,2,Kuveyt Turk Bank Credit Mohamad,Turkey,Kuveyt Turk Bank Credit,TRY
+2032,2,DSK Bank Mohamad,Bulgaria,DSK Bank,USD
+2033,2,DSK Bank Mohamad,Bulgaria,DSK Bank,EUR
+2034,2,DSK Bank Mohamad,Bulgaria,DSK Bank,BGN
+2035,2,DSK Bank Credit Mohamad,Bulgaria,DSK Bank Credit,BGN
+2036,2,QNB Bank Mohamad,Syria,QNB Bank,SYR
+2037,2,SIIB Bank Mohamad,Syria,SIIB Bank,SYR
+3001,3,SNB Dilara,Saudi Arabia,SNB,SR
+3002,3,SNB Credit Dilara,Saudi Arabia,SNB Credit,SR
+3003,3,STC Pay Dilara,Saudi Arabia,STC Pay,SR
+3004,3,Alinma Pay Dilara,Saudi Arabia,Alinma Pay,SR
+3005,3,Tiqmo Dilara,Saudi Arabia,Tiqmo,SR
+3006,3,Cash Dilara,General,Cash,SR
+3007,3,Cash Dilara,General,Cash,TRY
+3008,3,Cash Dilara,General,Cash,BGN
+3009,3,Cash Dilara,General,Cash,SRY
+3010,3,Cash Dilara,General,Cash,USD
+3011,3,Cash Dilara,General,Cash,EUR
+3012,3,IS Bank Dilara,Turkey,IS Bank,TRY
+3013,3,IS Bank Credit Dilara,Turkey,IS Bank Credit,TRY
+3014,3,IS Bank Dilara,Turkey,IS Bank,USD
+3015,3,IS Bank Dilara,Turkey,IS Bank,EUR
+3016,3,AKBank Dilara,Turkey,AKBank,TRY
+3017,3,AKBank Dilara,Turkey,AKBank,USD
+3018,3,AKBank Dilara,Turkey,AKBank,EUR
+3019,3,AKBank Credit Dilara,Turkey,AKBank Credit,TRY
+3020,3,Ziraat Bank Dilara,Turkey,Ziraat Bank,TRY
+3021,3,Ziraat Bank Dilara,Turkey,Ziraat Bank,USD
+3022,3,Ziraat Bank Dilara,Turkey,Ziraat Bank,EUR
+3023,3,Ziraat Bank Credit Dilara,Turkey,Ziraat Bank Credit,TRY
+3024,3,Kuveyt Turk Bank Dilara,Turkey,Kuveyt Turk Bank,TRY
+3025,3,Kuveyt Turk Bank Dilara,Turkey,Kuveyt Turk Bank,USD
+3026,3,Kuveyt Turk Bank Dilara,Turkey,Kuveyt Turk Bank,EUR
+3027,3,Kuveyt Turk Bank Credit Dilara,Turkey,Kuveyt Turk Bank Credit,TRY
+3028,3,DSK Bank Dilara,Bulgaria,DSK Bank,USD
+3029,3,DSK Bank Dilara,Bulgaria,DSK Bank,EUR
+3030,3,DSK Bank Dilara,Bulgaria,DSK Bank,BGN
+3031,3,DSK Bank Credit Dilara,Bulgaria,DSK Bank Credit,BGN
+3032,3,QNB Bank Dilara,Syria,QNB Bank,SYR
+3033,3,SIIB Bank Dilara,Syria,SIIB Bank,SYR
+4001,4,SNB Ahmad,Saudi Arabia,SNB,SR
+4002,4,SNB Credit Ahmad,Saudi Arabia,SNB Credit,SR
+4003,4,STC Pay Ahmad,Saudi Arabia,STC Pay,SR
+4004,4,Alinma Pay Ahmad,Saudi Arabia,Alinma Pay,SR
+4005,4,Tiqmo Ahmad,Saudi Arabia,Tiqmo,SR
+4006,4,Cash Ahmad,General,Cash,SR
+4007,4,Cash Ahmad,General,Cash,TRY
+4008,4,Cash Ahmad,General,Cash,BGN
+4009,4,Cash Ahmad,General,Cash,SRY
+4010,4,Cash Ahmad,General,Cash,USD
+4011,4,Cash Ahmad,General,Cash,EUR
+4012,4,IS Bank Ahmad,Turkey,IS Bank,TRY
+4013,4,IS Bank Credit Ahmad,Turkey,IS Bank Credit,TRY
+4014,4,IS Bank Ahmad,Turkey,IS Bank,USD
+4015,4,IS Bank Ahmad,Turkey,IS Bank,EUR
+4016,4,AKBank Ahmad,Turkey,AKBank,TRY
+4017,4,AKBank Ahmad,Turkey,AKBank,USD
+4018,4,AKBank Ahmad,Turkey,AKBank,EUR
+4019,4,AKBank Credit Ahmad,Turkey,AKBank Credit,TRY
+4020,4,Ziraat Bank Ahmad,Turkey,Ziraat Bank,TRY
+4021,4,Ziraat Bank Ahmad,Turkey,Ziraat Bank,USD
+4022,4,Ziraat Bank Ahmad,Turkey,Ziraat Bank,EUR
+4023,4,Ziraat Bank Credit Ahmad,Turkey,Ziraat Bank Credit,TRY
+4024,4,Kuveyt Turk Bank Ahmad,Turkey,Kuveyt Turk Bank,TRY
+4025,4,Kuveyt Turk Bank Ahmad,Turkey,Kuveyt Turk Bank,USD
+4026,4,Kuveyt Turk Bank Ahmad,Turkey,Kuveyt Turk Bank,EUR
+4027,4,Kuveyt Turk Bank Credit Ahmad,Turkey,Kuveyt Turk Bank Credit,TRY
+4028,4,DSK Bank Ahmad,Bulgaria,DSK Bank,USD
+4029,4,DSK Bank Ahmad,Bulgaria,DSK Bank,EUR
+4030,4,DSK Bank Ahmad,Bulgaria,DSK Bank,BGN
+4031,4,DSK Bank Credit Ahmad,Bulgaria,DSK Bank Credit,BGN
+4032,4,QNB Bank Ahmad,Syria,QNB Bank,SYR
+4033,4,SIIB Bank Ahmad,Syria,SIIB Bank,SYR
+5001,5,SNB Mouaid,Saudi Arabia,SNB,SR
+5002,5,SNB Credit Mouaid,Saudi Arabia,SNB Credit,SR
+5003,5,STC Pay Mouaid,Saudi Arabia,STC Pay,SR
+5004,5,Alinma Pay Mouaid,Saudi Arabia,Alinma Pay,SR
+5005,5,Tiqmo Mouaid,Saudi Arabia,Tiqmo,SR
+5006,5,Cash Mouaid,General,Cash,SR
+5007,5,Cash Mouaid,General,Cash,TRY
+5008,5,Cash Mouaid,General,Cash,BGN
+5009,5,Cash Mouaid,General,Cash,SRY
+5010,5,Cash Mouaid,General,Cash,USD
+5011,5,Cash Mouaid,General,Cash,EUR
+5012,5,IS Bank Mouaid,Turkey,IS Bank,TRY
+5013,5,IS Bank Credit Mouaid,Turkey,IS Bank Credit,TRY
+5014,5,IS Bank Mouaid,Turkey,IS Bank,USD
+5015,5,IS Bank Mouaid,Turkey,IS Bank,EUR
+5016,5,AKBank Mouaid,Turkey,AKBank,TRY
+5017,5,AKBank Mouaid,Turkey,AKBank,USD
+5018,5,AKBank Mouaid,Turkey,AKBank,EUR
+5019,5,AKBank Credit Mouaid,Turkey,AKBank Credit,TRY
+5020,5,Ziraat Bank Mouaid,Turkey,Ziraat Bank,TRY
+5021,5,Ziraat Bank Mouaid,Turkey,Ziraat Bank,USD
+5022,5,Ziraat Bank Mouaid,Turkey,Ziraat Bank,EUR
+5023,5,Ziraat Bank Credit Mouaid,Turkey,Ziraat Bank Credit,TRY
+5024,5,Kuveyt Turk Bank Mouaid,Turkey,Kuveyt Turk Bank,TRY
+5025,5,Kuveyt Turk Bank Mouaid,Turkey,Kuveyt Turk Bank,USD
+5026,5,Kuveyt Turk Bank Mouaid,Turkey,Kuveyt Turk Bank,EUR
+5027,5,Kuveyt Turk Bank Credit Mouaid,Turkey,Kuveyt Turk Bank Credit,TRY
+5028,5,DSK Bank Mouaid,Bulgaria,DSK Bank,USD
+5029,5,DSK Bank Mouaid,Bulgaria,DSK Bank,EUR
+5030,5,DSK Bank Mouaid,Bulgaria,DSK Bank,BGN
+5031,5,DSK Bank Credit Mouaid,Bulgaria,DSK Bank Credit,BGN
+5032,5,QNB Bank Mouaid,Syria,QNB Bank,SYR
+5033,5,SIIB Bank Mouaid,Syria,SIIB Bank,SYR
+6001,6,SNB Hayat,Saudi Arabia,SNB,SR
+6002,6,SNB Credit Hayat,Saudi Arabia,SNB Credit,SR
+6003,6,STC Pay Hayat,Saudi Arabia,STC Pay,SR
+6004,6,Alinma Pay Hayat,Saudi Arabia,Alinma Pay,SR
+6005,6,Tiqmo Hayat,Saudi Arabia,Tiqmo,SR
+6006,6,Cash Hayat,General,Cash,SR
+6007,6,Cash Hayat,General,Cash,TRY
+6008,6,Cash Hayat,General,Cash,BGN
+6009,6,Cash Hayat,General,Cash,SRY
+6010,6,Cash Hayat,General,Cash,USD
+6011,6,Cash Hayat,General,Cash,EUR
+6012,6,IS Bank Hayat,Turkey,IS Bank,TRY
+6013,6,IS Bank Credit Hayat,Turkey,IS Bank Credit,TRY
+6014,6,IS Bank Hayat,Turkey,IS Bank,USD
+6015,6,IS Bank Hayat,Turkey,IS Bank,EUR
+6016,6,AKBank Hayat,Turkey,AKBank,TRY
+6017,6,AKBank Hayat,Turkey,AKBank,USD
+6018,6,AKBank Hayat,Turkey,AKBank,EUR
+6019,6,AKBank Credit Hayat,Turkey,AKBank Credit,TRY
+6020,6,Ziraat Bank Hayat,Turkey,Ziraat Bank,TRY
+6021,6,Ziraat Bank Hayat,Turkey,Ziraat Bank,USD
+6022,6,Ziraat Bank Hayat,Turkey,Ziraat Bank,EUR
+6023,6,Ziraat Bank Credit Hayat,Turkey,Ziraat Bank Credit,TRY
+6024,6,Kuveyt Turk Bank Hayat,Turkey,Kuveyt Turk Bank,TRY
+6025,6,Kuveyt Turk Bank Hayat,Turkey,Kuveyt Turk Bank,USD
+6026,6,Kuveyt Turk Bank Hayat,Turkey,Kuveyt Turk Bank,EUR
+6027,6,Kuveyt Turk Bank Credit Hayat,Turkey,Kuveyt Turk Bank Credit,TRY
+6028,6,DSK Bank Hayat,Bulgaria,DSK Bank,USD
+6029,6,DSK Bank Hayat,Bulgaria,DSK Bank,EUR
+6030,6,DSK Bank Hayat,Bulgaria,DSK Bank,BGN
+6031,6,DSK Bank Credit Hayat,Bulgaria,DSK Bank Credit,BGN
+6032,6,QNB Bank Hayat,Syria,QNB Bank,SYR
+6033,6,SIIB Bank Hayat,Syria,SIIB Bank,SYR
+7001,7,Cash Abdulrahman,General,Cash,SR
+7002,7,Cash Abdulrahman,General,Cash,TRY
+7003,7,Cash Abdulrahman,General,Cash,BGN
+7004,7,Cash Abdulrahman,General,Cash,SRY
+7005,7,Cash Abdulrahman,General,Cash,USD
+7006,7,Cash Abdulrahman,General,Cash,EUR
+7007,7,IS Bank Abdulrahman,Turkey,IS Bank,TRY
+7008,7,IS Bank Credit Abdulrahman,Turkey,IS Bank Credit,TRY
+7009,7,IS Bank Abdulrahman,Turkey,IS Bank,USD
+7010,7,IS Bank Abdulrahman,Turkey,IS Bank,EUR
+7011,7,AKBank Abdulrahman,Turkey,AKBank,TRY
+7012,7,AKBank Abdulrahman,Turkey,AKBank,USD
+7013,7,AKBank Abdulrahman,Turkey,AKBank,EUR
+7014,7,AKBank Credit Abdulrahman,Turkey,AKBank Credit,TRY
+7015,7,Ziraat Bank Abdulrahman,Turkey,Ziraat Bank,TRY
+7016,7,Ziraat Bank Abdulrahman,Turkey,Ziraat Bank,USD
+7017,7,Ziraat Bank Abdulrahman,Turkey,Ziraat Bank,EUR
+7018,7,Ziraat Bank Credit Abdulrahman,Turkey,Ziraat Bank Credit,TRY
+7019,7,Kuveyt Turk Bank Abdulrahman,Turkey,Kuveyt Turk Bank,TRY
+7020,7,Kuveyt Turk Bank Abdulrahman,Turkey,Kuveyt Turk Bank,USD
+7021,7,Kuveyt Turk Bank Abdulrahman,Turkey,Kuveyt Turk Bank,EUR
+7022,7,Kuveyt Turk Bank Credit Abdulrahman,Turkey,Kuveyt Turk Bank Credit,TRY
+7023,7,DSK Bank Abdulrahman,Bulgaria,DSK Bank,USD
+7024,7,DSK Bank Abdulrahman,Bulgaria,DSK Bank,EUR
+7025,7,DSK Bank Abdulrahman,Bulgaria,DSK Bank,BGN
+7026,7,DSK Bank Credit Abdulrahman,Bulgaria,DSK Bank Credit,BGN
+7027,7,QNB Bank Abdulrahman,Syria,QNB Bank,SYR
+7028,7,SIIB Bank Abdulrahman,Syria,SIIB Bank,SYR
+8001,8,Cash Rawaa,General,Cash,SR
+8002,8,Cash Rawaa,General,Cash,TRY
+8003,8,Cash Rawaa,General,Cash,BGN
+8004,8,Cash Rawaa,General,Cash,SRY
+8005,8,Cash Rawaa,General,Cash,USD
+8006,8,Cash Rawaa,General,Cash,EUR
+8007,8,IS Bank Rawaa,Turkey,IS Bank,TRY
+8008,8,IS Bank Credit Rawaa,Turkey,IS Bank Credit,TRY
+8009,8,IS Bank Rawaa,Turkey,IS Bank,USD
+8010,8,IS Bank Rawaa,Turkey,IS Bank,EUR
+8011,8,AKBank Rawaa,Turkey,AKBank,TRY
+8012,8,AKBank Rawaa,Turkey,AKBank,USD
+8013,8,AKBank Rawaa,Turkey,AKBank,EUR
+8014,8,AKBank Credit Rawaa,Turkey,AKBank Credit,TRY
+8015,8,Ziraat Bank Rawaa,Turkey,Ziraat Bank,TRY
+8016,8,Ziraat Bank Rawaa,Turkey,Ziraat Bank,USD
+8017,8,Ziraat Bank Rawaa,Turkey,Ziraat Bank,EUR
+8018,8,Ziraat Bank Credit Rawaa,Turkey,Ziraat Bank Credit,TRY
+8019,8,Kuveyt Turk Bank Rawaa,Turkey,Kuveyt Turk Bank,TRY
+8020,8,Kuveyt Turk Bank Rawaa,Turkey,Kuveyt Turk Bank,USD
+8021,8,Kuveyt Turk Bank Rawaa,Turkey,Kuveyt Turk Bank,EUR
+8022,8,Kuveyt Turk Bank Credit Rawaa,Turkey,Kuveyt Turk Bank Credit,TRY
+8023,8,DSK Bank Rawaa,Bulgaria,DSK Bank,USD
+8024,8,DSK Bank Rawaa,Bulgaria,DSK Bank,EUR
+8025,8,DSK Bank Rawaa,Bulgaria,DSK Bank,BGN
+8026,8,DSK Bank Credit Rawaa,Bulgaria,DSK Bank Credit,BGN
+8027,8,QNB Bank Rawaa,Syria,QNB Bank,SYR
+8028,8,SIIB Bank Rawaa,Syria,SIIB Bank,SYR
+9001,9,Cash Saudi Box,Saudi Arabia,Cash,SR
+9002,9,Cash Saudi Box,Saudi Arabia,Cash,TRY
+9003,9,Cash Saudi Box,Saudi Arabia,Cash,BGN
+9004,9,Cash Saudi Box,Saudi Arabia,Cash,SRY
+9005,9,Cash Saudi Box,Saudi Arabia,Cash,USD
+9006,9,Cash Saudi Box,Saudi Arabia,Cash,EUR
+10001,10,Cash Syria Box,Syria,Cash,SR
+10002,10,Cash Syria Box,Syria,Cash,TRY
+10003,10,Cash Syria Box,Syria,Cash,BGN
+10004,10,Cash Syria Box,Syria,Cash,SRY
+10005,10,Cash Syria Box,Syria,Cash,USD
+10006,10,Cash Syria Box,Syria,Cash,EUR
+11001,11,Cash Turkey Box,Turkey,Cash,SR
+11002,11,Cash Turkey Box,Turkey,Cash,TRY
+11003,11,Cash Turkey Box,Turkey,Cash,BGN
+11004,11,Cash Turkey Box,Turkey,Cash,SRY
+11005,11,Cash Turkey Box,Turkey,Cash,USD
+11006,11,Cash Turkey Box,Turkey,Cash,EUR
+12001,12,Cash Bulgaria Box,Bulgaria,Cash,SR
+12002,12,Cash Bulgaria Box,Bulgaria,Cash,TRY
+12003,12,Cash Bulgaria Box,Bulgaria,Cash,BGN
+12004,12,Cash Bulgaria Box,Bulgaria,Cash,SRY
+12005,12,Cash Bulgaria Box,Bulgaria,Cash,USD
+12006,12,Cash Bulgaria Box,Bulgaria,Cash,EUR
+13001,13,SNB Hayat Ipdaeia,Saudi Arabia,SNB,SR
+13002,13,Cash Hayat Ipdaeia,Saudi Arabia,Cash,SR

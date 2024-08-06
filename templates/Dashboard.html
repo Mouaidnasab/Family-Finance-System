@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <style>
+        .widget {
+            width: 45%;
+            display: inline-block;
+            vertical-align: top;
+            margin: 20px;
+        }
+        .settings {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="{{ url_for('dashboard') }}" ><button  class="active">Dashboard</button></a>
+        <a href="{{ url_for('transactions') }}" ><button >Transactions</button></a>
+        <a href="{{ url_for('reports') }}" ><button>Reports</button></a>
+    </div>
+    <div id="messageBoxContainer">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{{ 'message' if category == 'message' else 'error' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+    <div class="sub-navbar">
+       
+       
+    </div>
+
+    <div class="contentdashboard" id="dashboardContent">
+        <!-- Expense Chart Widget -->
+        <div class="widget" id="expenseWidget">
+            <div class="widget-content">
+            <div class="widget" id="expenses_sunburst"></div>
+            </div>
+    <div class="widget" id="account_expenses_income"></div>
+    <div class="widget" id="cash_balance_donut"></div>
+    <div class="widget" id="geo_chart"></div>
+    <div class="widget" id="customer_balance"></div>
+        </div>
+    <script>
+        function showSettings() {
+            alert("Settings button clicked!");
+            // Implement settings modal or functionality here
+        }
+
+        google.charts.load('current', {'packages':['corechart', 'geochart']});
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() {
+            drawExpensesSunburst();
+            drawAccountExpensesIncome();
+            drawCashBalanceDonut();
+            drawGeoChart();
+            drawCustomerBalance();
+        }
+
+        function drawExpensesSunburst() {
+            // Static data for the sunburst chart
+            const data = [
+                {name: "Expenses", children: [
+                    {name: "Segment A", children: [
+                        {name: "Sub_Category 1", value: 100},
+                        {name: "Sub_Category 2", value: 200}
+                    ]},
+                    {name: "Segment B", children: [
+                        {name: "Sub_Category 3", value: 150},
+                        {name: "Sub_Category 4", value: 250}
+                    ]}
+                ]}
+            ];
+
+            const width = 400;
+            const radius = width / 2;
+            const svg = d3.select("#expenses_sunburst").append("svg")
+                .attr("width", width)
+                .attr("height", width)
+                .append("g")
+                .attr("transform", "translate(" + radius + "," + radius + ")");
+
+            const partition = d3.partition()
+                .size([2 * Math.PI, radius]);
+
+            const root = d3.hierarchy(data[0])
+                .sum(d => d.value);
+
+            partition(root);
+
+            const arc = d3.arc()
+                .startAngle(d => d.x0)
+                .endAngle(d => d.x1)
+                .innerRadius(d => d.y0)
+                .outerRadius(d => d.y1);
+
+            svg.selectAll("path")
+                .data(root.descendants())
+                .enter().append("path")
+                .attr("d", arc)
+                .style("stroke", "#fff")
+                .style("fill", d => { 
+                    while (d.depth > 1) d = d.parent; 
+                    return d.data.name === "Segment A" ? "#1f77b4" : "#ff7f0e";
+                });
+        }
+
+        function drawAccountExpensesIncome() {
+            // Static data for the diverging stacked bar chart
+            const data = [
+                {name: "Customer A", expenses: 500, income: 800},
+                {name: "Customer B", expenses: 300, income: 600},
+                {name: "Customer C", expenses: 400, income: 700}
+            ];
+
+            const svg = d3.select("#account_expenses_income").append("svg")
+                .attr("width", 400)
+                .attr("height", 400);
+
+            const margin = {top: 20, right: 20, bottom: 30, left: 40},
+                  width = +svg.attr("width") - margin.left - margin.right,
+                  height = +svg.attr("height") - margin.top - margin.bottom;
+
+            const g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            const x = d3.scaleBand()
+                .rangeRound([0, width])
+                .padding(0.1)
+                .align(0.1);
+
+            const y = d3.scaleLinear()
+                .rangeRound([height, 0]);
+
+            const z = d3.scaleOrdinal()
+                .range(["#d7191c", "#1a9641"]);
+
+            const stack = d3.stack()
+                .offset(d3.stackOffsetDiverging);
+
+            x.domain(data.map(d => d.name));
+            y.domain([d3.min(data, d => -d.expenses), d3.max(data, d => d.income)]);
+            z.domain(["income", "expenses"]);
+
+            g.selectAll(".serie")
+                .data(stack.keys(["income", "expenses"])(data))
+                .enter().append("g")
+                .attr("class", "serie")
+                .attr("fill", d => z(d.key))
+                .selectAll("rect")
+                .data(d => d)
+                .enter().append("rect")
+                .attr("x", d => x(d.data.name))
+                .attr("y", d => y(d[1]))
+                .attr("height", d => Math.abs(y(d[0]) - y(d[1])))
+                .attr("width", x.bandwidth());
+        }
+
+        function drawCashBalanceDonut() {
+            // Static data for the donut chart
+            const data = google.visualization.arrayToDataTable([
+                ['Currency', 'Balance'],
+                ['USD', 1000],
+                ['EUR', 500],
+                ['GBP', 300]
+            ]);
+
+            const options = {
+                title: 'Cash Balance by Currency',
+                pieHole: 0.4,
+            };
+
+            const chart = new google.visualization.PieChart(document.getElementById('cash_balance_donut'));
+            chart.draw(data, options);
+        }
+
+        function drawGeoChart() {
+            // Static data for the geo chart
+            const data = google.visualization.arrayToDataTable([
+                ['Country', 'Balance'],
+                ['United States', 1000],
+                ['Germany', 500],
+                ['United Kingdom', 300]
+            ]);
+
+            const options = {
+                region: 'world',
+                displayMode: 'regions',
+                resolution: 'countries',
+            };
+
+            const chart = new google.visualization.GeoChart(document.getElementById('geo_chart'));
+            chart.draw(data, options);
+        }
+
+        function drawCustomerBalance() {
+            // Static data for the vertical bar chart
+            const data = google.visualization.arrayToDataTable([
+                ['Customer ID', 'Balance'],
+                ['Customer A', 1000],
+                ['Customer B', 1500],
+                ['Customer C', 1300]
+            ]);
+
+            const options = {
+                title: 'Customer Balance',
+                hAxis: {title: 'Customer ID'},
+                vAxis: {title: 'Balance'},
+            };
+
+            const chart = new google.visualization.BarChart(document.getElementById('customer_balance'));
+            chart.draw(data, options);
+        }
+    </script>
+</body>
+</html>
