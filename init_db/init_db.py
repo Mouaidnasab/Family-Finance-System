@@ -118,6 +118,8 @@ def initialize_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Transactions_Temp (
             transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            checkbox int NOT NULL DEFAULT '0',
+            status varchar(255) NOT NULL DEFAULT 'not ready',            
             how_it_is_inserted TEXT,
             date DATE DEFAULT NULL,
             segment VARCHAR(255) DEFAULT NULL,

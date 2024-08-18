@@ -156,18 +156,25 @@ function submitNewDetail(description) {
 }
 
 function callUpdateTransactionsTemp() {
-    fetch("/call_procedure/UpdateTransactionsTemp")
+    fetch("/UpdateTransactionsTemp")
         .then(response => response.json())
         .then(result => {
-            if (result.status === 'success' && result.unmatched_descriptions.length > 0) {
-                showNewDetailsPopup(result.unmatched_descriptions);
+            if (result.status === 'success') {
+                showMessage('Auto-fill completed successfully!', 'message');
+                setTimeout(() => location.reload(), 1000);  // Refresh the page after 1 second
             } else {
-                showMessage('Procedure executed successfully!', 'message');
-                setTimeout(() => location.reload(), 1000);
+                showMessage(result.message, 'error');
+
             }
         })
+        
         .catch(error => showMessage(error, 'error'));
+
+        setTimeout(() => location.reload(), 1000);  // Refresh the page after 1 second
+
 }
+
+
 
 function showMessage(message, type) {
     if (message) {

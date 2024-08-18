@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <div class="navbar">
@@ -27,10 +28,8 @@
     <div class="sub-navbar">
         <div id="filterRow" class="filter-row"></div>
     </div>
-    <div class="fixed-table-container">
-        <div class="table-container">
-            <div id="hot"></div>
-        </div>
+    <div class="table-container">
+        <div id="hot"></div>
     </div>
     <div class="fixed-button-container">
         <form id="downloadForm" action="{{ url_for('download_filtered') }}" method="post">
@@ -42,6 +41,7 @@
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var hot;
@@ -58,7 +58,7 @@
                     }
                 });
 
-                function initializeFilters(data) {
+            function initializeFilters(data) {
                 const filterRow = document.getElementById('filterRow');
                 const columns = [
                     { id: 'dateFilter', type: 'date', placeholder: 'YYYY/MM/DD', label: 'Date' },
@@ -106,9 +106,13 @@
                     } else if (col.type === 'date') {
                         const input = document.createElement('input');
                         input.id = col.id;
-                        input.type = 'date';  // Ensure the type is set to 'date'
+                        input.type = 'text';  // Change to 'text' to support flatpickr
                         input.placeholder = col.placeholder || '';
-                        input.addEventListener('input', fetchFilteredData);
+                        flatpickr(input, {
+                            mode: "range",
+                            dateFormat: "Y/m/d",
+                            onChange: fetchFilteredData
+                        });
                         filterElement.appendChild(input);
                     } else {
                         const input = document.createElement('input');
@@ -120,7 +124,7 @@
                     }
                     filterRow.appendChild(filterElement);
                 });
-}
+            }
 
             function initializeHandsontable(data) {
                 hot = new Handsontable(container, {
@@ -155,12 +159,11 @@
                     rowHeaders: true,
                     columnSorting: true,
                     multiSelect: true,
+                    readOnly: true,
                     fillHandle: true,
-                    height: "50",
                     stretchH: 'all',
                     manualColumnFreeze: true,
                     contextMenu: true,
-                    height: 'auto',
                     wordWrap: false,
                 });
             }

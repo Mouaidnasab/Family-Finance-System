@@ -18,18 +18,24 @@
         }
         .fixed-table-container {
             width: 100%;
-            /* height: 800px; */
+            height: 750px;
             margin: 0 auto; /* Center the container */
             overflow: auto;
-            min-height: 200px;
         }
-        #hot {
-            width: 100%;
-            height: 800px;
-            min-height: 200px;
-            
 
+        .yellowRow {
+            background-color: rgb(255, 255, 148) !important;
         }
+
+        .greenRow {
+            background-color: rgb(149, 255, 149) !important;
+        }
+
+        .redRow {
+            background-color: rgb(253, 153, 153) !important;
+        }
+
+
         /* .modal {
             display: none;
             position: fixed;
@@ -165,105 +171,114 @@
                     }
                 });
     
-            function initializeHandsontable(data, dropdownData) {
-                var container = document.getElementById('hot');
-                var hot = new Handsontable(container, {
-                    data: data,
-                    colHeaders: [
-                        'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 'Sub Notes', 'Transaction Description',
-                        'Country Withdraw', 'Country Used', 'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
-                    ],
-                    
-                    columns: [
-                        {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
-                        {data: 'segment', type: 'dropdown', source: dropdownData.segment ,allowInvalid: false},
-                        {data: 'type', type: 'dropdown', source: dropdownData.type,allowInvalid: false},
-                        {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type,allowInvalid: false},
-                        {data: 'category', type: 'dropdown', source: dropdownData.category,allowInvalid: false},
-                        {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete',validator: 'autocomplete',source: dropdownData.sub_category},
-                        {data: 'details'},
-                        {data: 'notes'},
-                        {data: 'sub_notes'},
-                        {data: 'transaction_description'},
-                        {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
-                        {data: 'country_used', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
-                        {data: 'account_name', type: 'dropdown', source: dropdownData.account_name,allowInvalid: false},
-                        {data: 'currency', type: 'dropdown', source: dropdownData.currency,allowInvalid: false},
-                        {data: 'payeer', type: 'dropdown', source: dropdownData.account_name},
-                        {data: 'paid_to', type: 'dropdown', source: dropdownData.account_name.concat(dropdownData.member_name)},
-                        {data: 'amount', type: 'numeric'}
-                    ],
-                    manualColumnResize: true,
-                    filters: true,
-                    dropdownMenu: ['filter_by_value', 'filter_action_bar'],
-                    licenseKey: 'non-commercial-and-evaluation',
-                    manualColumnMove: true,
-                    rowHeaders: true,
-                    columnSorting: true,
-                    multiSelect: true,
-                    fillHandle: true,
-                    height: "500",
-                    
-                    stretchH: 'all',
-                    manualColumnFreeze: true,
-                    contextMenu: {
-                        items: {
-                            'row_above': {name: 'Insert a row above'},
-                            'row_below': {name: 'Insert a row below'},
-                            'hsep1': '---------',
-                            'remove_row': {name: 'Remove the selected row'},
-                            'hsep2': '---------',
-                            'undo': {name: 'Undo the last action'},
-                            'redo': {name: 'Redo the last action'},
-                            'hsep3': '---------',
-                            'cut': {name: 'Cut'},
-                            'copy': {name: 'Copy'},
-                            'hsep4': '---------',
-                            'freeze_column': {name: 'Freeze the selected column'},
-                            'unfreeze_column': {name: 'Unfreeze the selected column'}
-                        }
-                    },
-                    height: 'auto',
-                    cells: function(row, col) {
-                        let cp = {};
-                        if (row % 2 === 0) {
-                            cp.className = 'greyRow';
-                        }
-                        return cp;
+                function initializeHandsontable(data, dropdownData) {
+                    var container = document.getElementById('hot');
+                    var hot = new Handsontable(container, {
+                        data: data,
+                        colHeaders: [
+                            '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
+                            'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
+                            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
+                        ],
+                        columns: [
+                            {
+                                data: 'checkbox',
+                                type: 'checkbox',
+                                checkedTemplate: 1,
+                                uncheckedTemplate: 0
+                            },
+                            {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
+                            {data: 'segment', type: 'dropdown', source: dropdownData.segment ,allowInvalid: false},
+                            {data: 'type', type: 'dropdown', source: dropdownData.type,allowInvalid: false},
+                            {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type,allowInvalid: false},
+                            {data: 'category', type: 'dropdown', source: dropdownData.category,allowInvalid: false},
+                            {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete',validator: 'autocomplete',source: dropdownData.sub_category},
+                            {data: 'details'},
+                            {data: 'notes'},
+                            {data: 'sub_notes'},
+                            {data: 'transaction_description'},
+                            {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
+                            {data: 'country_used', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
+                            {data: 'account_name', type: 'dropdown', source: dropdownData.account_name,allowInvalid: false},
+                            {data: 'currency', type: 'dropdown', source: dropdownData.currency,allowInvalid: false},
+                            {data: 'payeer', type: 'dropdown', source: dropdownData.account_name},
+                            {data: 'paid_to', type: 'dropdown', source: dropdownData.account_name.concat(dropdownData.member_name)},
+                            {data: 'amount', type: 'numeric'},
+                            {data: 'status',  readOnly: true   }  
+                        ],
+                        manualColumnResize: true,
+                        filters: true,
+                        dropdownMenu: ['filter_by_value', 'filter_action_bar'],
+                        licenseKey: 'non-commercial-and-evaluation',
+                        manualColumnMove: true,
+                        rowHeaders: true,
+                        columnSorting: true,
+                        multiSelect: true,
+                        fillHandle: true,
+                        stretchH: 'all',
                         
-                    },
-                    afterChange: function (changes, source) {
-                        if (source === 'loadData') {
-                            return;
-                        }
-                        changes.forEach(function ([row, col, oldValue, newValue]) {
-                            if (oldValue !== newValue) {
-                                let rowData = hot.getSourceDataAtRow(row);
-                                
-                                if (rowData) {
-                                    let payload = {
-                                        id: rowData.transaction_id,
-                                        field: hot.colToProp(col),
-                                        value: newValue
-                                    };
-                                    $.ajax({
-                                        url: '/update_transaction',
-                                        type: 'POST',
-                                        contentType: 'application/json',
-                                        data: JSON.stringify(payload),
-                                        success: function (response) {
-                                            console.log('Update successful:', response);
-                                        },
-                                        error: function (error) {
-                                            console.error('Update failed:', error);
-                                        }
-                                    });
-                                } else {
-                                    console.error('Row data is undefined for row:', row);
-                                }
+                        manualColumnFreeze: true,
+                        contextMenu: {
+                            items: {
+                                'row_above': {name: 'Insert a row above'},
+                                'row_below': {name: 'Insert a row below'},
+                                'hsep1': '---------',
+                                'remove_row': {name: 'Remove the selected row'},
+                                'hsep2': '---------',
+                                'undo': {name: 'Undo the last action'},
+                                'redo': {name: 'Redo the last action'},
+                                'hsep3': '---------',
+                                'cut': {name: 'Cut'},
+                                'copy': {name: 'Copy'},
+                                'hsep4': '---------',
+                                'freeze_column': {name: 'Freeze the selected column'},
+                                'unfreeze_column': {name: 'Unfreeze the selected column'}
                             }
-                        });
-                    },
+                        },
+                        cells: function(row, col) {
+                            let cp = {};
+                            const rowData = this.instance.getSourceDataAtRow(row);
+
+                            if (rowData.checkbox === 0) {
+                                cp.className = 'yellowRow';
+                            } else if (rowData.checkbox === 1 && rowData.status === 'ready') {
+                                cp.className = 'greenRow';
+                            } else { cp.className = 'redRow'; }
+
+                            return cp;
+                        },
+                        afterChange: function (changes, source) {
+                            if (source === 'loadData') {
+                                return;
+                            }
+                            changes.forEach(function ([row, col, oldValue, newValue]) {
+                                if (oldValue !== newValue) {
+                                    let rowData = hot.getSourceDataAtRow(row);
+                                    
+                                    if (rowData) {
+                                        let payload = {
+                                            id: rowData.transaction_id,
+                                            field: hot.colToProp(col),
+                                            value: newValue
+                                        };
+                                        $.ajax({
+                                            url: '/update_transaction',
+                                            type: 'POST',
+                                            contentType: 'application/json',
+                                            data: JSON.stringify(payload),
+                                            success: function (response) {
+                                                console.log('Update successful:', response);
+                                            },
+                                            error: function (error) {
+                                                console.error('Update failed:', error);
+                                            }
+                                        });
+                                    } else {
+                                        console.error('Row data is undefined for row:', row);
+                                    }
+                                }
+                            });
+                        },
                     afterCreateRow: function (index, amount) {
                         // Delay to ensure the row is fully created before setting data
                         setTimeout(function() {
