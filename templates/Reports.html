@@ -27,6 +27,8 @@
     </div>
     <div class="sub-navbar">
         <div id="filterRow" class="filter-row"></div>
+        <button id="resetButton" class="reset-button">Reset Filters</button>
+
     </div>
     <div class="table-container">
         <div id="hot"></div>
@@ -224,7 +226,14 @@
                     }, 5000);  // Display for 5 seconds
                 }
             }
+            document.getElementById("resetButton").addEventListener("click", function() {
+                location.reload();
+            });
         });
+
+
+
+
     </script>
 </body>
 </html>

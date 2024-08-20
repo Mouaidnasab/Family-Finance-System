@@ -1,7 +1,7 @@
 import subprocess
 
 # List of Python files to run
-python_files = ['/Users/mouaidnasab/Documents/personal projects/Finance App V.2/init_db/init_db.py', '/Users/mouaidnasab/Documents/personal projects/Finance App V.2/init_db/insert members.py', '/Users/mouaidnasab/Documents/personal projects/Finance App V.2/init_db/insert Accounts.py', '/Users/mouaidnasab/Documents/personal projects/Finance App V.2/init_db/insert transactions.py']
+python_files = ['./init_db/insert transactions.py']
 
 # Loop through the list and run each file
 for file in python_files:

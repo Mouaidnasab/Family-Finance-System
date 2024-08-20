@@ -5,7 +5,7 @@ import re
 import joblib
 
 # Load your dataset
-df = pd.read_csv('/Users/mouaidnasab/Downloads/Family-Finance-System/details_model/data2024.csv')
+df = pd.read_csv('./details_model/data2024.csv')
 
 # Filter out transactions with empty details
 df = df.dropna(subset=['transaction_description']).reset_index(drop=True)

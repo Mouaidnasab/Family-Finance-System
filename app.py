@@ -6,21 +6,15 @@ import os
 import json 
 from details_model.loading_model import find_most_similar
 import numpy as np
+import config
 
 
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-db_config = {
-    'user': 'mouaid_admin',
-    'password': '0991553333',
-    'host': 'localhost',
-    'database': 'Finance'
-}
-
 def populate_unique_values():
-    conn = mysql.connector.connect(**db_config)
+    conn = mysql.connector.connect(**config.db_config)
     cursor = conn.cursor()
 
     # Populate Segments
@@ -113,7 +107,7 @@ def transactions():
         
         if file:
             try:
-                conn = mysql.connector.connect(**db_config)
+                conn = mysql.connector.connect(**config.db_config)
                 cursor = conn.cursor()
                 csv_reader = csv.reader(TextIOWrapper(file.stream, encoding='utf-8'))
                 headers = next(csv_reader)  # Skip the header row
@@ -141,7 +135,7 @@ def transactions():
             return redirect(url_for('transactions'))
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -168,7 +162,7 @@ def reports():
 @app.route('/download')
 def download_file():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -192,7 +186,7 @@ def download_file():
 @app.route('/template_download')
 def template_download():
     try:
-        template_path = os.path.join('static', 'Transactions_Template.xlsx')
+        template_path = 'static/Transactions_Templete.xlsx'
         return send_file(template_path, as_attachment=True)
     except Exception as e:
         flash(f'Error downloading template: {str(e)}', 'error')
@@ -205,7 +199,7 @@ def update_transaction():
     field = data['field']
     value = data['value']
 
-    connection = mysql.connector.connect(**db_config)
+    connection = mysql.connector.connect(**config.db_config)
     cursor = connection.cursor()
 
     update_query = f"UPDATE Transactions_Temp SET {field} = %s WHERE transaction_id = %s"
@@ -221,7 +215,7 @@ def update_transaction():
 def insert_transaction():
     data = request.get_json()
 
-    connection = mysql.connector.connect(**db_config)
+    connection = mysql.connector.connect(**config.db_config)
     cursor = connection.cursor()
 
     insert_query = '''
@@ -243,7 +237,7 @@ def insert_transaction():
 @app.route('/clear_content', methods=['POST'])
 def clear_content():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute('DELETE FROM Transactions_Temp')
         conn.commit()
@@ -258,7 +252,7 @@ def clear_content():
 @app.route('/UpdateTransactionsTemp')
 def call_procedure_update_transactions_temp():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
 
         # Fetch all rows from Transactions_Temp
@@ -301,7 +295,7 @@ def add_transaction_detail():
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     '''
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute(insert_query, (
             data.get('unique_description'), data.get('transaction_description'), data.get('segment'), data.get('type'), data.get('sub_type'),
@@ -322,7 +316,7 @@ def dropdown_data():
     dropdown_data = {}
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
 
         # Fetch segments
@@ -396,7 +390,7 @@ def add_rows():
     row_count = data.get('rows', 1)
     how_it_is_inserted_value = ["Empty_Row_Added_From_Website"]  # Static value for How_It_Is_Inserted
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         insert_query = '''INSERT INTO Transactions_Temp ( How_It_Is_Inserted) 
                           VALUES ( %s)'''
@@ -414,7 +408,7 @@ def add_rows():
 @app.route('/finalize')
 def finalize_transactions():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -707,7 +701,7 @@ def filter_transactions():
     print('Query params:', query_params)  # Debugging line to print the query parameters
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, query_params)
         rows = cursor.fetchall()
@@ -793,7 +787,7 @@ def download_filtered():
             query_params.append(f'%{value}%')
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute(query, query_params)
         rows = cursor.fetchall()
@@ -816,6 +810,6 @@ def download_filtered():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=4500)
+    app.run(debug=True, host="0.0.0.0", port=4300)
 
 

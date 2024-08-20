@@ -1,13 +1,13 @@
 import mysql.connector
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config
+
 
 def initialize_db():
     # Connect to the MySQL database
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="mouaid_admin",
-        password="0991553333",
-        database="Finance"
-    )
+    conn = mysql.connector.connect(**config.db_config)
     cursor = conn.cursor()
 
     # SQL script to drop and create the tables

@@ -2,6 +2,8 @@
 import requests
 import mysql.connector
 from datetime import datetime, timedelta, date
+import config
+
 
 API_KEY = 'b633d9adb0214055a41643290080e479'
 BASE_URL = 'https://openexchangerates.org/api/historical/'
@@ -22,12 +24,8 @@ def get_exchange_rates(date):
     }
 
 def get_last_date():
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="mouaid_admin",
-        password="0991553333",
-        database="finance"
-    )
+    conn = mysql.connector.connect(**config.db_config)
+
     cursor = conn.cursor()
     cursor.execute('SELECT MAX(date) FROM Rates')
     result = cursor.fetchone()
@@ -35,12 +33,7 @@ def get_last_date():
     return result[0]
 
 def save_exchange_rates(rates):
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="mouaid_admin",
-        password="0991553333",
-        database="Finance"
-    )
+    conn = mysql.connector.connect(**config.db_config)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO Rates (date, usd_to_bgn, usd_to_eur, usd_to_try, bgn_to_usd, eur_to_usd, try_to_usd)

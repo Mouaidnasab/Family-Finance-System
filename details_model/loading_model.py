@@ -4,10 +4,10 @@ import re
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the saved models and reduced matrix
-tfidf_vectorizer = joblib.load('/Users/mouaidnasab/Downloads/Family-Finance-System/details_model/tfidf_vectorizer.joblib')
-svd = joblib.load('/Users/mouaidnasab/Downloads/Family-Finance-System/details_model/svd.joblib')
-tfidf_matrix_reduced = joblib.load('/Users/mouaidnasab/Downloads/Family-Finance-System/details_model/tfidf_matrix_reduced.joblib')
-df = joblib.load('/Users/mouaidnasab/Downloads/Family-Finance-System/details_model/df.joblib')
+tfidf_vectorizer = joblib.load('./details_model/tfidf_vectorizer.joblib')
+svd = joblib.load('./details_model/svd.joblib')
+tfidf_matrix_reduced = joblib.load('./details_model/tfidf_matrix_reduced.joblib')
+df = joblib.load('./details_model/df.joblib')
 
 # Function to clean the text (removes numbers and special characters)
 def clean_text(text):

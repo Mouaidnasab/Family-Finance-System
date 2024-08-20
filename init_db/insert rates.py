@@ -2,18 +2,17 @@ import csv
 import mysql.connector
 from datetime import datetime
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config
+
 
 # Get the directory of the script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(script_dir, 'static data', 'rates.csv')
 
 # Connect to the MySQL database
-connection = mysql.connector.connect(
-    host="localhost",
-    user="mouaid_admin",
-    password="0991553333",
-    database="Finance"
-)
+connection = mysql.connector.connect(**config.db_config)
 cursor = connection.cursor()
 
 # Create the rates table if it doesn't exist
@@ -52,7 +51,7 @@ else:
     # Insert data into the rates table
     try:
         insert_query = '''
-        INSERT INTO rates (date, usd_to_bgn, usd_to_eur, usd_to_try, bgn_to_usd, eur_to_usd, try_to_usd) 
+        INSERT INTO Rates (date, usd_to_bgn, usd_to_eur, usd_to_try, bgn_to_usd, eur_to_usd, try_to_usd) 
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE 
             usd_to_bgn = VALUES(usd_to_bgn),
