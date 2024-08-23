@@ -21,7 +21,7 @@ pipeline {
                     // Ensure all containers and resources are cleaned up
                     sh 'docker-compose down --remove-orphans'
                     sh 'docker-compose build'
-                    withDockerRegistry(credentialsId: 'dockerhub-credentials-id') {
+                    withDockerRegistry(credentialsId:  env.DOCKER_CREDENTIALS_ID) {
                         sh 'docker-compose push'
                     }
                 }
