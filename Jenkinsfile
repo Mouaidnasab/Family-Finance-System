@@ -52,7 +52,8 @@ pipeline {
                     sh 'docker-compose up -d'
                 }
             }
-        }
+    }
+    }
 
     post {
         always {
@@ -65,5 +66,4 @@ pipeline {
             echo 'Pipeline succeeded, application deployed using Docker Compose.'
         }
     }
-}
 }
