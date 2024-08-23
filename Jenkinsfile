@@ -28,20 +28,31 @@ pipeline {
             }
         }
 
-        stage('Deploy with Docker Compose') {
-            when {
-                expression { currentBuild.result == null }
-            }
+        stage('Build and Push Docker Images') {
             steps {
                 script {
-                    // Stop and remove existing containers if they exist, then deploy new containers
-                    sh 'docker-compose down'
+                    // Ensure all containers and resources are cleaned up
                     sh 'docker-compose down --remove-orphans'
+                    sh 'docker-compose build'
+                    withDockerRegistry(credentialsId: 'dockerhub-credentials-id') {
+                        sh 'docker-compose push'
+                    }
+                }
+            }
+        }
+        stage('Deploy with Docker Compose') {
+            steps {
+                script {
+                    // Check and remove any existing container with the same name
+                    sh '''
+                    if [ $(docker ps -aq -f name=mysql_container) ]; then
+                        docker rm -f mysql_container
+                    fi
+                    '''
                     sh 'docker-compose up -d'
                 }
             }
         }
-    }
 
     post {
         always {
