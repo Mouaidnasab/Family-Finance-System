@@ -35,6 +35,7 @@ pipeline {
             steps {
                 script {
                     // Stop and remove existing containers if they exist, then deploy new containers
+                    sh 'docker-compose down'
                     sh 'docker-compose down --remove-orphans'
                     sh 'docker-compose up -d'
                 }

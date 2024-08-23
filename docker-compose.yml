@@ -8,7 +8,7 @@ services:
       - MYSQL_USER=mouaid_admin
       - MYSQL_PASSWORD=0991553333
     volumes:
-      - finance_mysql_data:/var/lib/mysql
+      - family-finance-system_mysql_data:/var/lib/mysql
     ports:
       - "3333:3306"
     healthcheck:
@@ -38,5 +38,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  finance_mysql_data:
+  family-finance-system_mysql_data:
     external: true
