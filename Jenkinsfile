@@ -13,20 +13,7 @@ pipeline {
         }
 
         
-        stage('Build and Push Docker Images') {
-            when {
-                expression { currentBuild.result == null }
-            }
-            steps {
-                script {
-                    // Build and push Docker images using Docker Compose
-                    sh 'docker-compose build'
-                    docker.withRegistry('https://index.docker.io/v1/', env.DOCKER_CREDENTIALS_ID) {
-                        sh 'docker-compose push'
-                    }
-                }
-            }
-        }
+
 
         stage('Build and Push Docker Images') {
             steps {
