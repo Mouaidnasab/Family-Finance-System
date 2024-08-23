@@ -49,6 +49,7 @@ pipeline {
         failure {
             echo 'Pipeline failed, no deployment will be performed.'
         }
+        
         success {
             echo 'Pipeline succeeded, application deployed using Docker Compose.'
         }
