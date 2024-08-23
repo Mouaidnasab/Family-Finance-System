@@ -38,5 +38,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  finance_mysql_data:
     external: true
