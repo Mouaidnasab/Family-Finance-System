@@ -16,6 +16,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   flask_app:
     image: mouaidnasab/sharetopi:0
@@ -34,7 +35,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    restart: no
+    restart: unless-stopped
 
 volumes:
   mysql_data:
+    external: true

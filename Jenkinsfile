@@ -12,6 +12,21 @@ pipeline {
             }
         }
 
+        stage('Syntax Check') {
+            steps {
+                script {
+                    sh 'python -m py_compile $(find . -name "*.py")'
+                }
+            }
+            post {
+                failure {
+                    script {
+                        currentBuild.result = 'FAILURE'
+                        echo 'Syntax errors found! Stopping pipeline.'
+                    }
+                }
+            }
+        }
 
         stage('Build and Push Docker Images') {
             when {
@@ -35,7 +50,7 @@ pipeline {
             steps {
                 script {
                     // Stop and remove existing containers if they exist, then deploy new containers
-                    sh 'docker-compose down'
+                    sh 'docker-compose down --remove-orphans'
                     sh 'docker-compose up -d'
                 }
             }
