@@ -6,13 +6,11 @@ pipeline {
     }
 
     stages {
-        stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Mouaidnasab/Family-Finance-System.git', credentialsId: 'github-pat'
+                git branch: 'main', url: 'https://github.com/Mouaidnasab/Family-Finance-System.git'
             }
         }
-        } 
 
         
 
