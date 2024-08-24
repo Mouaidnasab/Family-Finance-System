@@ -28,7 +28,7 @@ services:
       - DATABASE_PORT=3306
       - DATABASE_NAME=Finance
       - DATABASE_USER=mouaid_admin
-      - DATABASE_PASSWORD=0991553333
+      - DATABASE_PASSWORD=Mn@1234
     working_dir: /usr/src/app
     ports:
       - "4500:4500"
