@@ -3,10 +3,10 @@ services:
     image: mysql:latest
     container_name: mysql_container
     environment:
-      - MYSQL_ROOT_PASSWORD=0991553333
+      - MYSQL_ROOT_PASSWORD=Mn@12345
       - MYSQL_DATABASE=Finance
       - MYSQL_USER=mouaid_admin
-      - MYSQL_PASSWORD=0991553333
+      - MYSQL_PASSWORD=Mn@1234
     volumes:
       - family-finance-system_mysql_data:/var/lib/mysql
     ports:
@@ -37,6 +37,27 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase_container
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase-data:/metabase-data
+    environment:
+      - MB_DB_TYPE=mysql
+      - MB_DB_DBNAME=Finance
+      - MB_DB_PORT=3306
+      - MB_DB_USER=mouaid_admin
+      - MB_DB_PASS=Mn@1234
+      - MB_DB_HOST=mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   family-finance-system_mysql_data:
+    external: true
+  metabase-data:
     external: true
