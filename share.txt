@@ -1,2 +1,10 @@
 docker run --hostname=956d5c59fdd4 --env=PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin --env=LANG=C.UTF-8 --env=GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D --env=PYTHON_VERSION=3.11.9 --env=PYTHON_PIP_VERSION=24.0 --env=PYTHON_SETUPTOOLS_VERSION=65.5.1 --env=PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/66d8a0f637083e2c3ddffc0cb1e65ce126afb856/public/get-pip.py --env=PYTHON_GET_PIP_SHA256=6fb7b781206356f45ad79efbb19322caa6c2a5ad39092d0d44d0fec94117e118 --env=FLASK_APP=app.py --env=FLASK_RUN_HOST=0.0.0.0 --network=finance-network --workdir=/usr/src/app -p 4500:4500 --restart=no --runtime=runc -d mouaidnasab/sharetopi:0
 docker build -t mouaidnasab/sharetopi:0 .                
+
+
+su -
+
+
+rm /usr/local/bin/docker-compose
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
