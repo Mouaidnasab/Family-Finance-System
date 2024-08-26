@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
 
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase-arm:latest
     container_name: metabase_container
     ports:
       - "3000:3000"
