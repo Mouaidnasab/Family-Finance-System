@@ -1,13 +1,13 @@
 import mysql.connector
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config
+
 
 def initialize_db():
     # Connect to the MySQL database
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="mouaid_admin",
-        password="0991553333",
-        database="Finance"
-    )
+    conn = mysql.connector.connect(**config.db_config)
     cursor = conn.cursor()
 
     # SQL script to drop and create the tables
@@ -118,6 +118,8 @@ def initialize_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Transactions_Temp (
             transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            checkbox int NOT NULL DEFAULT '0',
+            status varchar(255) NOT NULL DEFAULT 'not ready',            
             how_it_is_inserted TEXT,
             date DATE DEFAULT NULL,
             segment VARCHAR(255) DEFAULT NULL,

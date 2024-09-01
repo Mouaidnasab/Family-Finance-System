@@ -3,21 +3,18 @@ import mysql.connector
 import csv
 from io import TextIOWrapper, StringIO, BytesIO
 import os
-import json  # Add this import statement
+import json 
+from details_model.loading_model import find_most_similar
+import numpy as np
+import config
+
 
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-db_config = {
-    'user': 'mouaid_admin',
-    'password': '0991553333',
-    'host': 'localhost',
-    'database': 'Finance'
-}
-
 def populate_unique_values():
-    conn = mysql.connector.connect(**db_config)
+    conn = mysql.connector.connect(**config.db_config)
     cursor = conn.cursor()
 
     # Populate Segments
@@ -110,7 +107,7 @@ def transactions():
         
         if file:
             try:
-                conn = mysql.connector.connect(**db_config)
+                conn = mysql.connector.connect(**config.db_config)
                 cursor = conn.cursor()
                 csv_reader = csv.reader(TextIOWrapper(file.stream, encoding='utf-8'))
                 headers = next(csv_reader)  # Skip the header row
@@ -138,7 +135,7 @@ def transactions():
             return redirect(url_for('transactions'))
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -165,7 +162,7 @@ def reports():
 @app.route('/download')
 def download_file():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -189,7 +186,7 @@ def download_file():
 @app.route('/template_download')
 def template_download():
     try:
-        template_path = os.path.join('static', 'Transactions_Template.xlsx')
+        template_path = 'static/Transactions_Templete.xlsx'
         return send_file(template_path, as_attachment=True)
     except Exception as e:
         flash(f'Error downloading template: {str(e)}', 'error')
@@ -202,11 +199,12 @@ def update_transaction():
     field = data['field']
     value = data['value']
 
-    connection = mysql.connector.connect(**db_config)
+    connection = mysql.connector.connect(**config.db_config)
     cursor = connection.cursor()
 
     update_query = f"UPDATE Transactions_Temp SET {field} = %s WHERE transaction_id = %s"
     cursor.execute(update_query, (value, transaction_id))
+    cursor.execute("CALL finalize_transactions_status()")
     connection.commit()
     cursor.close()
     connection.close()
@@ -217,7 +215,7 @@ def update_transaction():
 def insert_transaction():
     data = request.get_json()
 
-    connection = mysql.connector.connect(**db_config)
+    connection = mysql.connector.connect(**config.db_config)
     cursor = connection.cursor()
 
     insert_query = '''
@@ -239,7 +237,7 @@ def insert_transaction():
 @app.route('/clear_content', methods=['POST'])
 def clear_content():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute('DELETE FROM Transactions_Temp')
         conn.commit()
@@ -251,34 +249,42 @@ def clear_content():
         cursor.close()
         conn.close()
 
-@app.route('/call_procedure/<procedure_name>')
-def call_procedure(procedure_name):
-    unmatched_descriptions = []
-
+@app.route('/UpdateTransactionsTemp')
+def call_procedure_update_transactions_temp():
     try:
-        conn = mysql.connector.connect(**db_config)
-        cursor = conn.cursor()
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor(dictionary=True)
 
-        # Call the procedure
-        cursor.callproc(procedure_name)
+        # Fetch all rows from Transactions_Temp
+        cursor.execute('SELECT * FROM Transactions_Temp')
+        transactions = cursor.fetchall()
+
+        for transaction in transactions:
+            description = transaction.get('transaction_description')
+
+            if description:
+                # Use the find_most_similar function to get the most similar row
+                similar_row, similarity_score = find_most_similar(description)
+ 
+
+                for key, value in similar_row.items():
+                    if transaction['sub_type'] == 'Direct' and key in transaction and not transaction[key]:  # Check if the type is 'Direct' and the cell is empty
+                        if isinstance(value, float) and np.isnan(value):  # Check if the value is nan
+                            value = None  # or value = '' if you prefer to store an empty string
+                        update_query = f"UPDATE Transactions_Temp SET {key} = %s WHERE transaction_id = %s"
+                        cursor.execute(update_query, (value, transaction['transaction_id']))
+
         conn.commit()
-
-        # Fetch unmatched descriptions if the procedure is UpdateTransactionsTemp
-        if procedure_name == 'UpdateTransactionsTemp':
-            cursor.execute("SELECT description FROM UnmatchedDescriptions")
-            unmatched_descriptions = [row[0] for row in cursor.fetchall()]
-
-            # Clear the UnmatchedDescriptions table after fetching the data
-            cursor.execute("DELETE FROM UnmatchedDescriptions")
-            conn.commit()
+        flash('Auto-fill completed successfully!', 'message')
 
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
+        conn.rollback()
+        flash(f'Error during auto-fill: {str(e)}', 'error')
     finally:
         cursor.close()
         conn.close()
 
-    return jsonify({'status': 'success', 'unmatched_descriptions': unmatched_descriptions})
+    return redirect(url_for('transactions'))
 
 @app.route('/add_transaction_detail', methods=['POST'])
 def add_transaction_detail():
@@ -289,7 +295,7 @@ def add_transaction_detail():
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     '''
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute(insert_query, (
             data.get('unique_description'), data.get('transaction_description'), data.get('segment'), data.get('type'), data.get('sub_type'),
@@ -310,7 +316,7 @@ def dropdown_data():
     dropdown_data = {}
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
 
         # Fetch segments
@@ -384,7 +390,7 @@ def add_rows():
     row_count = data.get('rows', 1)
     how_it_is_inserted_value = ["Empty_Row_Added_From_Website"]  # Static value for How_It_Is_Inserted
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         insert_query = '''INSERT INTO Transactions_Temp ( How_It_Is_Inserted) 
                           VALUES ( %s)'''
@@ -402,7 +408,7 @@ def add_rows():
 @app.route('/finalize')
 def finalize_transactions():
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM Transactions_Temp')
         rows = cursor.fetchall()
@@ -620,6 +626,9 @@ def finalize_transactions():
         cursor.close()
         conn.close()
     return redirect(url_for('transactions'))
+
+
+
 @app.route('/filter_transactions', methods=['POST'])
 def filter_transactions():
     filters = request.json
@@ -661,7 +670,14 @@ def filter_transactions():
     for column, value in filters.items():
         if value:
             table_column = column.lower()
-            if column in ['segment', 'type', 'sub_type', 'category', 'sub_category']:
+            if column in ['date']:
+                table_column = f'Transactions.{table_column}'
+                date_range = value.split(' to ')
+                if len(date_range) == 2:
+                    query += f' AND {table_column} BETWEEN %s AND %s'
+                    query_params.extend(date_range)
+                continue
+            elif column in ['segment', 'type', 'sub_type', 'category', 'sub_category']:
                 table_column = f'Transactions.{table_column}'
             elif column in ['details', 'notes', 'sub_notes', 'transaction_description']:
                 table_column = f'Details.{table_column}'
@@ -685,7 +701,7 @@ def filter_transactions():
     print('Query params:', query_params)  # Debugging line to print the query parameters
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, query_params)
         rows = cursor.fetchall()
@@ -702,11 +718,10 @@ def filter_transactions():
             if value is None:
                 row[key] = ''
 
-    print('Fetched rows:', rows)  # Debugging line to print fetched rows
-
     response = jsonify({'status': 'success', 'data': rows})
     response.headers.add('Content-Type', 'application/json')
     return response
+
 
 
 @app.route('/download_filtered', methods=['POST'])
@@ -772,7 +787,7 @@ def download_filtered():
             query_params.append(f'%{value}%')
 
     try:
-        conn = mysql.connector.connect(**db_config)
+        conn = mysql.connector.connect(**config.db_config)
         cursor = conn.cursor()
         cursor.execute(query, query_params)
         rows = cursor.fetchall()
@@ -795,6 +810,6 @@ def download_filtered():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=4500)
+    app.run(debug=True, host="0.0.0.0", port=4300)
 
 

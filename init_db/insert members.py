@@ -1,6 +1,10 @@
 import mysql.connector
 import csv
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config
+
 
 
 # Get the directory of the script
@@ -10,12 +14,7 @@ file_path = os.path.join(script_dir, 'static data', 'members.csv')
 
 
 # Connect to MySQL database
-conn = mysql.connector.connect(
-    host="localhost",
-    user="mouaid_admin",
-    password="0991553333",
-    database="Finance"
-)
+conn = mysql.connector.connect(**config.db_config)
 cursor = conn.cursor()
 
 # Function to convert string with commas to float
@@ -37,7 +36,7 @@ def insert_data_from_csv(csv_file_path):
         for row in reader:
             try:
                 cursor.execute('''
-                    INSERT INTO members (
+                    INSERT INTO Members (
                         member_id, first_name, last_name
                     ) VALUES (%s, %s, %s)
                 ''', (
