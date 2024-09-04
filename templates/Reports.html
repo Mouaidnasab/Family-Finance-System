@@ -12,6 +12,8 @@
 </head>
 <body>
     <div class="navbar">
+        <button id="langButton" data-lang="en">English</button>
+
         <a href="{{ url_for('dashboard') }}"><button>Dashboard</button></a>
         <a href="{{ url_for('transactions') }}"><button>Transactions</button></a>
         <a href="{{ url_for('reports') }}"><button class="active">Reports</button></a>
@@ -44,6 +46,47 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            const langButton = document.getElementById('langButton');
+            let currentLang = localStorage.getItem('lang') || 'en';
+
+            // Load the dictionary file
+            fetch('static/dictionary.json')
+                .then(response => response.json())
+                .then(dictionary => {
+                    function translateText(text, lang) {
+                        return dictionary[lang][text] || text;
+                    }
+
+                    function translatePage() {
+                        const elements = document.querySelectorAll('*');
+                        elements.forEach(element => {
+                            if (element.childNodes.length > 0) {
+                                element.childNodes.forEach(node => {
+                                    if (node.nodeType === Node.TEXT_NODE) {
+                                        const originalText = node.textContent.trim();
+                                        if (originalText) {
+                                            node.textContent = translateText(originalText, currentLang);
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    langButton.addEventListener('click', () => {
+                        currentLang = (currentLang === 'en') ? 'ar' : 'en';
+                        langButton.textContent = (currentLang === 'en') ? 'English' : 'Arabic';
+                        localStorage.setItem('lang', currentLang);
+                        translatePage();
+                    });
+
+                    // Initial translation
+                    translatePage();
+                });
+        });
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var hot;
