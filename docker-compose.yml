@@ -19,7 +19,7 @@ services:
   #   restart: unless-stopped
 
   flask_app:
-    image: mouaidnasab/sharetopi:latest
+    image: mouaidnasab/main_flask:${VERSION:-latest}  # Use environment variable for version
     container_name: flask_container
     environment:
       - FLASK_APP=app.py
