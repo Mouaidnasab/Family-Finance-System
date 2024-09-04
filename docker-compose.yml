@@ -19,7 +19,7 @@ services:
   #   restart: unless-stopped
 
   flask_app:
-    image: mouaidnasab/sharetopi:1.0
+    image: mouaidnasab/sharetopi:latest
     container_name: flask_container
     environment:
       - FLASK_APP=app.py
