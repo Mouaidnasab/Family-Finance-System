@@ -20,8 +20,7 @@ pipeline {
             steps {
                 script {
                     // Ensure all containers and resources are cleaned up
-                    sh 'docker stop flask_container'
-                    sh 'docker rm flask_container'
+                    sh 'docker-compose down'
                     sh 'docker-compose build'
                     withDockerRegistry(credentialsId:  env.DOCKER_CREDENTIALS_ID) {
                         sh 'docker-compose push'
@@ -29,15 +28,16 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Deploy with Docker Compose') {
             steps {
                 script {
                     // Check and remove any existing container with the same name
                     sh '''
-                    if [ $(docker ps -aq -f name=mysql_container) ]; then
-                        docker rm -f mysql_container
-                    fi
+                        if [ "$(docker ps -q -f name=flask_container)" ]; then
+                            docker stop flask_container
+                            docker rm flask_container
+                        fi
                     '''
                     sh 'docker-compose up -d'
                 }
