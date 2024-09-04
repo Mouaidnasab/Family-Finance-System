@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS_ID = "Docker"
-        IMAGE_NAME = "main_flask" // Replace with your image name
+        IMAGE_NAME = "mouaidnasab/main_flask" // Replace with your image name
         VERSION_FILE = "VERSION.txt" // File where the version is stored
     }
 
@@ -52,7 +52,7 @@ pipeline {
                 script {
                     withDockerRegistry(credentialsId: env.DOCKER_CREDENTIALS_ID) {
                         // Push the Docker image with the incremented version
-                        sh "docker push mouaidnasab/${IMAGE_NAME}:${env.VERSION}"
+                        sh "docker push ${IMAGE_NAME}:${env.VERSION}"
                     }
                 }
             }
