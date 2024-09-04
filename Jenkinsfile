@@ -58,21 +58,22 @@ pipeline {
             }
         }
 
+        stage('Update Docker Compose File') {
+            steps {
+                script {
+                    // Use Groovy to update docker-compose.yml
+                    def yaml = readYaml file: 'docker-compose.yml'
+                    yaml.services.flask_app.image = "${IMAGE_NAME}:${env.VERSION}"
+                    writeYaml file: 'docker-compose.yml', data: yaml
+                }
+            }
+        }
+
         stage('Deploy with Docker Compose') {
             steps {
                 script {
-                    // Ensure all containers and resources are cleaned up
                     sh 'docker-compose down --remove-orphans'
-
-                    // Pull the latest version of the Docker image
-                    sh "docker-compose pull"
-
-                    // Update docker-compose.yml to use the new version tag
-                    sh """
-                    sed -i 's/${IMAGE_NAME}:latest/${IMAGE_NAME}:${env.VERSION}/g' docker-compose.yml
-                    """
-                    
-                    // Bring up the containers with the new version
+                    sh 'docker-compose pull'
                     sh 'docker-compose up -d'
                 }
             }
