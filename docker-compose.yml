@@ -47,6 +47,19 @@ services:
   #   restart: unless-stopped
 
 
+  # metabase:  #For Pi only
+  #   image: family-finance-system-metabase:latest
+  #   container_name: metabase_container
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - family-finance-system_metabase-data:/metabase-data
+  # depends_on:
+  #   mysql:
+  #     condition: service_healthy
+  # restart: unless-stopped
+
+
 
   #  jenkins:
   #   image: jenkins/jenkins:lts
