@@ -1,22 +1,22 @@
 services:
-  mysql:
-    image: mysql:latest
-    container_name: mysql_container
-    environment:
-      - MYSQL_ROOT_PASSWORD=MnMysql12345
-      - MYSQL_DATABASE=Finance
-      - MYSQL_USER=mouaid_admin
-      - MYSQL_PASSWORD=MnMysql1234
-    volumes:
-      - family-finance-system_mysql_data:/var/lib/mysql
-    ports:
-      - "3333:3306"
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+  # mysql:
+  #   image: mysql:latest
+  #   container_name: mysql_container
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=MnMysql12345
+  #     - MYSQL_DATABASE=Finance
+  #     - MYSQL_USER=mouaid_admin
+  #     - MYSQL_PASSWORD=MnMysql1234
+  #   volumes:
+  #     - family-finance-system_mysql_data:/var/lib/mysql
+  #   ports:
+  #     - "3333:3306"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
 
   flask_app:
     image: mouaidnasab/sharetopi:0
@@ -27,25 +27,25 @@ services:
     working_dir: /usr/src/app
     ports:
       - "4500:4500"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    restart: unless-stopped
+    # depends_on:
+    #   mysql:
+    #     condition: service_healthy
+    # restart: unless-stopped
 
-  metabase:
-    image: metabase/metabase:latest
-    container_name: metabase_container
-    ports:
-      - "3000:3000"
-    volumes:
-      - metabase-data:/metabase-data
-    depends_on:
-      mysql:
-        condition: service_healthy
-    restart: unless-stopped
+  # metabase:
+  #   image: metabase/metabase:latest
+  #   container_name: metabase_container
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - metabase-data:/metabase-data
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   restart: unless-stopped
 
-volumes:
-  family-finance-system_mysql_data:
-    external: true
-  family-finance-system_metabase-data:
-    external: true
+# volumes:
+#   family-finance-system_mysql_data:
+#     external: true
+#   family-finance-system_metabase-data:
+#     external: true
