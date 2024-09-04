@@ -1,25 +1,25 @@
 services:
-  # mysql:
-  #   image: mysql:latest
-  #   container_name: mysql_container
-  #   environment:
-  #     - MYSQL_ROOT_PASSWORD=MnMysql12345
-  #     - MYSQL_DATABASE=Finance
-  #     - MYSQL_USER=mouaid_admin
-  #     - MYSQL_PASSWORD=MnMysql1234
-  #   volumes:
-  #     - family-finance-system_mysql_data:/var/lib/mysql
-  #   ports:
-  #     - "3333:3306"
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   restart: unless-stopped
+  mysql:
+    image: mysql:latest
+    container_name: mysql_container
+    environment:
+      - MYSQL_ROOT_PASSWORD=MnMysql12345
+      - MYSQL_DATABASE=Finance
+      - MYSQL_USER=mouaid_admin
+      - MYSQL_PASSWORD=MnMysql1234
+    volumes:
+      - family-finance-system_mysql_data:/var/lib/mysql
+    ports:
+      - "3333:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   flask_app:
-    image: mouaidnasab/sharetopi:0
+    image: mouaidnasab/sharetopi:1.0
     container_name: flask_container
     environment:
       - FLASK_APP=app.py
@@ -47,7 +47,7 @@ services:
   #   restart: unless-stopped
 
 # volumes:
-#   family-finance-system_mysql_data:
-#     external: true
+  family-finance-system_mysql_data:
+    external: true
 #   family-finance-system_metabase-data:
 #     external: true
