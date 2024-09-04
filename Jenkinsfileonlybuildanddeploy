@@ -47,27 +47,15 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    withDockerRegistry(credentialsId: env.DOCKER_CREDENTIALS_ID) {
-                        // Push the Docker image with the incremented version
-                        sh "docker push ${IMAGE_NAME}:${env.VERSION}"
-                    }
-                }
-            }
-        }
+        
 
         stage('Update Docker Compose File') {
             steps {
                 script {
-                    // Use Groovy to read, update, and write the docker-compose.yml file
-                    def dockerComposeFile = readFile('docker-compose.yml')
-                    def updatedContent = dockerComposeFile.replaceAll(
-                        "${IMAGE_NAME}:latest", 
-                        "${IMAGE_NAME}:${env.VERSION}"
-                    )
-                    writeFile file: 'docker-compose.yml', text: updatedContent
+                    // Use Groovy to update docker-compose.yml
+                    def yaml = readYaml file: 'docker-compose.yml'
+                    yaml.services.flask_app.image = "${IMAGE_NAME}:${env.VERSION}"
+                    writeYaml file: 'docker-compose.yml', data: yaml
                 }
             }
         }
