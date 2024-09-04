@@ -28,6 +28,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Deploy with Docker Compose') {
             steps {
                 script {
