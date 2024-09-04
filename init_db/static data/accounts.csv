@@ -7,7 +7,7 @@
 1006,1,Cash Mustafa,General,Cash,SR
 1007,1,Cash Mustafa,General,Cash,TRY
 1008,1,Cash Mustafa,General,Cash,BGN
-1009,1,Cash Mustafa,General,Cash,SRY
+1009,1,Cash Mustafa,General,Cash,SYR
 1010,1,Cash Mustafa,General,Cash,USD
 1011,1,Cash Mustafa,General,Cash,EUR
 1012,1,IS Bank Mustafa 78,Turkey,IS Bank,TRY
@@ -45,7 +45,7 @@
 2010,2,Cash Mohamad,General,Cash,SR
 2011,2,Cash Mohamad,General,Cash,TRY
 2012,2,Cash Mohamad,General,Cash,BGN
-2013,2,Cash Mohamad,General,Cash,SRY
+2013,2,Cash Mohamad,General,Cash,SYR
 2014,2,Cash Mohamad,General,Cash,USD
 2015,2,Cash Mohamad,General,Cash,EUR
 2016,2,IS Bank Mohamad,Turkey,IS Bank,TRY
@@ -78,7 +78,7 @@
 3006,3,Cash Dilara,General,Cash,SR
 3007,3,Cash Dilara,General,Cash,TRY
 3008,3,Cash Dilara,General,Cash,BGN
-3009,3,Cash Dilara,General,Cash,SRY
+3009,3,Cash Dilara,General,Cash,SYR
 3010,3,Cash Dilara,General,Cash,USD
 3011,3,Cash Dilara,General,Cash,EUR
 3012,3,IS Bank Dilara,Turkey,IS Bank,TRY
@@ -111,7 +111,7 @@
 4006,4,Cash Ahmad,General,Cash,SR
 4007,4,Cash Ahmad,General,Cash,TRY
 4008,4,Cash Ahmad,General,Cash,BGN
-4009,4,Cash Ahmad,General,Cash,SRY
+4009,4,Cash Ahmad,General,Cash,SYR
 4010,4,Cash Ahmad,General,Cash,USD
 4011,4,Cash Ahmad,General,Cash,EUR
 4012,4,IS Bank Ahmad,Turkey,IS Bank,TRY
@@ -144,7 +144,7 @@
 5006,5,Cash Mouaid,General,Cash,SR
 5007,5,Cash Mouaid,General,Cash,TRY
 5008,5,Cash Mouaid,General,Cash,BGN
-5009,5,Cash Mouaid,General,Cash,SRY
+5009,5,Cash Mouaid,General,Cash,SYR
 5010,5,Cash Mouaid,General,Cash,USD
 5011,5,Cash Mouaid,General,Cash,EUR
 5012,5,IS Bank Mouaid,Turkey,IS Bank,TRY
@@ -177,7 +177,7 @@
 6006,6,Cash Hayat,General,Cash,SR
 6007,6,Cash Hayat,General,Cash,TRY
 6008,6,Cash Hayat,General,Cash,BGN
-6009,6,Cash Hayat,General,Cash,SRY
+6009,6,Cash Hayat,General,Cash,SYR
 6010,6,Cash Hayat,General,Cash,USD
 6011,6,Cash Hayat,General,Cash,EUR
 6012,6,IS Bank Hayat,Turkey,IS Bank,TRY
@@ -205,7 +205,7 @@
 7001,7,Cash Abdulrahman,General,Cash,SR
 7002,7,Cash Abdulrahman,General,Cash,TRY
 7003,7,Cash Abdulrahman,General,Cash,BGN
-7004,7,Cash Abdulrahman,General,Cash,SRY
+7004,7,Cash Abdulrahman,General,Cash,SYR
 7005,7,Cash Abdulrahman,General,Cash,USD
 7006,7,Cash Abdulrahman,General,Cash,EUR
 7007,7,IS Bank Abdulrahman,Turkey,IS Bank,TRY
@@ -233,7 +233,7 @@
 8001,8,Cash Rawaa,General,Cash,SR
 8002,8,Cash Rawaa,General,Cash,TRY
 8003,8,Cash Rawaa,General,Cash,BGN
-8004,8,Cash Rawaa,General,Cash,SRY
+8004,8,Cash Rawaa,General,Cash,SYR
 8005,8,Cash Rawaa,General,Cash,USD
 8006,8,Cash Rawaa,General,Cash,EUR
 8007,8,IS Bank Rawaa,Turkey,IS Bank,TRY
@@ -261,25 +261,25 @@
 9001,9,Cash Saudi Box,Saudi Arabia,Cash,SR
 9002,9,Cash Saudi Box,Saudi Arabia,Cash,TRY
 9003,9,Cash Saudi Box,Saudi Arabia,Cash,BGN
-9004,9,Cash Saudi Box,Saudi Arabia,Cash,SRY
+9004,9,Cash Saudi Box,Saudi Arabia,Cash,SYR
 9005,9,Cash Saudi Box,Saudi Arabia,Cash,USD
 9006,9,Cash Saudi Box,Saudi Arabia,Cash,EUR
 10001,10,Cash Syria Box,Syria,Cash,SR
 10002,10,Cash Syria Box,Syria,Cash,TRY
 10003,10,Cash Syria Box,Syria,Cash,BGN
-10004,10,Cash Syria Box,Syria,Cash,SRY
+10004,10,Cash Syria Box,Syria,Cash,SYR
 10005,10,Cash Syria Box,Syria,Cash,USD
 10006,10,Cash Syria Box,Syria,Cash,EUR
 11001,11,Cash Turkey Box,Turkey,Cash,SR
 11002,11,Cash Turkey Box,Turkey,Cash,TRY
 11003,11,Cash Turkey Box,Turkey,Cash,BGN
-11004,11,Cash Turkey Box,Turkey,Cash,SRY
+11004,11,Cash Turkey Box,Turkey,Cash,SYR
 11005,11,Cash Turkey Box,Turkey,Cash,USD
 11006,11,Cash Turkey Box,Turkey,Cash,EUR
 12001,12,Cash Bulgaria Box,Bulgaria,Cash,SR
 12002,12,Cash Bulgaria Box,Bulgaria,Cash,TRY
 12003,12,Cash Bulgaria Box,Bulgaria,Cash,BGN
-12004,12,Cash Bulgaria Box,Bulgaria,Cash,SRY
+12004,12,Cash Bulgaria Box,Bulgaria,Cash,SYR
 12005,12,Cash Bulgaria Box,Bulgaria,Cash,USD
 12006,12,Cash Bulgaria Box,Bulgaria,Cash,EUR
 13001,13,SNB Hayat Ipdaeia,Saudi Arabia,SNB,SR
