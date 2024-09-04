@@ -20,7 +20,8 @@ pipeline {
             steps {
                 script {
                     // Ensure all containers and resources are cleaned up
-                    sh 'docker-compose down'
+                    sh 'docker stop flask_container'
+                    sh 'docker rm flask_container'
                     sh 'docker-compose build'
                     withDockerRegistry(credentialsId:  env.DOCKER_CREDENTIALS_ID) {
                         sh 'docker-compose push'
@@ -28,7 +29,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy with Docker Compose') {
             steps {
                 script {
