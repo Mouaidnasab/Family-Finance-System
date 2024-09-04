@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_CREDENTIALS_ID = "docker"
+        DOCKER_CREDENTIALS_ID = "Docker"
     }
 
     stages {
