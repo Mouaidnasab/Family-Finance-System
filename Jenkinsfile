@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Ensure all containers and resources are cleaned up
-                    sh 'docker-compose down --remove-orphans'
+                    sh 'docker-compose down'
                     sh 'docker-compose build'
                     withDockerRegistry(credentialsId:  env.DOCKER_CREDENTIALS_ID) {
                         sh 'docker-compose push'
