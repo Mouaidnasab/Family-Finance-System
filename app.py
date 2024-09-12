@@ -90,9 +90,14 @@ def populate_unique_values():
     # Populate Account_Names
     cursor.execute('''
     INSERT INTO dd_Account_Names (name)
-    SELECT DISTINCT Accounts.name FROM Accounts
-    WHERE Accounts.name IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
+    SELECT 
+        CONCAT(Accounts.name, ' - ', Accounts.currency) AS name_currency
+    FROM 
+        Accounts
+    WHERE 
+        Accounts.name IS NOT NULL
+    ON DUPLICATE KEY UPDATE name=VALUES(name);
+
     ''')
 
     # Populate Currencies from Accounts
