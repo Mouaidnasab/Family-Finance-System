@@ -551,3 +551,11 @@ thead th:hover {
     background-size: 8px 10px;
     padding-right: 30px; /* Space for the arrow */
 }
+
+
+.iframe {
+    width: 100%;
+    height: 100vh;
+    border: none;
+    overflow: hidden;
+}
