@@ -7,3 +7,4 @@ __pycache__/
 __pycache__
 config.py
 init_db/.DS_Store
+config.py

@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/css/pikaday.min.css">
+    <link rel="stylesheet" href="/static/css/sidebar_styles.css">
+
     
     <style>
         .greyRow {
@@ -77,14 +79,44 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
-        
 
-        <a href="{{ url_for('dashboard') }}"><button>Dashboard</button></a>
-        <a href="{{ url_for('transactions') }}"><button class="active">Transactions</button></a>
-        <a href="{{ url_for('reports') }}"><button>Reports</button></a>
-        <button id="langButton" data-lang="en">English</button>
-    </div>
+
+    <div class="sidebar_main">
+
+
+        <div class="sidebar main" id="mainLayer">
+             <button id="langButton" data-lang="en">English</button>
+
+             <a href="{{ url_for('dashboard') }}"><button class="layer-btn" >Dashboard</button></a>
+             <button class="layer-btn" onclick="showLayer('transactions')">Transactions</button>
+            <a href="{{ url_for('reports') }}"><button class="layer-btn" >Reports</button></a>
+    
+            <div class="profile-section">
+                <button class="profile-btn">Profile</button>
+                <button class="settings-btn">
+                    <!-- Example illustration for settings icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
+                        <path d="M462 975v-81q-42-8-78.5-24t-67.5-44l-66 30-108-173 63-46q-10-38-10-77t10-77l-63-46 108-173 66 30q29-27 67.5-43.5T462 249v-81h75v81q42 8 79.5 24.5T684 297l66-30 107 173-63 46q10 38 10 77t-10 77l63 46-107 173-66-30q-29 28-66.5 44t-79.5 24v81h-75zm37-169q83 0 141.5-58.5T699 606q0-83-58.5-141.5T499 406q-83 0-141.5 58.5T299 606q0 83 58.5 141.5T499 806z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    
+        <!-- Transactions Layer -->
+        <div class="sidebar layer" id="transactionsLayer">
+            <div class="layer-header">
+                <button class="back-btn" onclick="showLayer('main')">←</button>
+                <h2>Transactions</h2>
+            </div>
+            <!-- Add content related to Transactions -->
+        </div>
+    
+        <div class="sidebar-opener" id="sidebarOpener">
+        </div>
+    </div>   
+
+
+    
     <div id="messageBoxContainer">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -157,6 +189,8 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/static/js/scripts.js"></script>
     <script type="text/javascript" src="/static/js/language.js"> </script>
+    <script src="/static/js/sidebar_transactions.js"></script>
+
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
             var data = {{ rows|tojson|safe }};

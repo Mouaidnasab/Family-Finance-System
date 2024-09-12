@@ -1,0 +1,208 @@
+/* Color Variables */
+:root {
+    --background-color: #f5f5f5;
+    --button-bg-color: white;
+    --button-border-color: #ccc;
+    --button-hover-bg-color: #e0e0e0;
+    --button-text-color: #333;
+    --overlay-bg-color: rgba(0, 0, 0, 0.3);
+}
+
+/* General styling */
+.sidebar_main {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    height: 100%;
+    overflow-x: hidden;
+    background-color: var(--background-color);
+}
+
+.main-content {
+    transition: margin-left 0.3s ease;
+}
+
+/* Sidebar styling */
+.sidebar {
+    position: fixed;
+    left: -300px; /* Sidebar is hidden by default */
+    top: 0;
+    width: 300px;
+    height: 100%;
+    background-color: var(--background-color);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1); /* Light shadow */
+    transition: left 0.5s ease; /* Smooth transition */
+    overflow: hidden;
+    z-index: 1000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Profile and Settings buttons styling */
+.profile-section {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-btn {
+    flex-grow: 1; /* Take up remaining space */
+    margin-right: 10px; /* Space between profile and settings */
+    padding: 10px;
+    background-color: var(--button-bg-color);
+    border: 1px solid var(--button-border-color);
+    color: var(--button-text-color);
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px; /* Rounded corners */
+    transition: background-color 0.3s ease;
+}
+
+.profile-btn:hover {
+    background-color: var(--button-hover-bg-color); /* Hover effect */
+}
+
+.settings-btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--button-bg-color);
+    border: 1px solid var(--button-border-color);
+    color: var(--button-text-color);
+    border-radius: 8px; /* Rounded corners */
+    cursor: pointer;
+}
+
+.settings-btn:hover {
+    background-color: var(--button-hover-bg-color); /* Hover effect */
+}
+
+/* Fix for the SVG icon in settings button */
+.settings-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Specific styling for layer navigation buttons */
+.layer-btn {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: var(--button-bg-color);
+    border: 1px solid var(--button-border-color);
+    color: var(--button-text-color);
+    text-align: left;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px; /* Rounded corners */
+    transition: background-color 0.3s ease;
+}
+
+.layer-btn:hover {
+    background-color: var(--button-hover-bg-color); /* Hover effect */
+}
+
+/* Back button */
+.back-btn {
+    background: none;
+    border: none;
+    color: var(--button-text-color);
+    cursor: pointer;
+    font-size: 18px;
+}
+
+/* Smooth transitions */
+.sidebar-opened .sidebar {
+    left: 0;
+}
+
+.sidebar-opened .main-content {
+    margin-left: 300px;
+}
+
+/* Overlay (used for the tint behind the sidebar) */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--overlay-bg-color);
+    z-index: 999;
+    display: none; /* Hidden by default */
+}
+
+.overlay.active {
+    display: block; /* Visible when the sidebar is open */
+}
+
+/* Hide the sidebar opener (arrow) when the sidebar is open */
+.sidebar-opened .sidebar-opener {
+    display: none; /* Hide the sidebar opener when sidebar is open */
+}
+
+/* Sidebar opener styling */
+.sidebar-opener {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 100%;
+    background-color: transparent;
+    text-align: center;
+    color: var(--button-text-color);
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    z-index: 1001;
+}
+
+.sidebar-opener:hover {
+    opacity: 1;
+}
+
+.sidebar-opener span {
+    font-size: 20px;
+}
+
+
+/* Layer-specific styles */
+.sidebar.layer {
+    display: none; /* Hidden by default */
+}
+
+/* Show the active layer */
+.sidebar.layer.active {
+    display: block; /* Only the active layer will be visible */
+}
+
+/* Back button with layer title in a row */
+.layer-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.layer-header .back-btn {
+    background: none;
+    border: none;
+    color: var(--button-text-color);
+    cursor: pointer;
+    font-size: 18px;
+    margin-right: 10px; /* Spacing between back button and layer title */
+}
+
+.layer-header h2 {
+    margin: 0;
+    font-size: 24px;
+    color: var(--button-text-color);
+    padding-left: 20px;
+}
