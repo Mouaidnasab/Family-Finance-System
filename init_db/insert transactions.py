@@ -110,7 +110,7 @@ for index, row in df.iterrows():
         if payeer_key in accounts_dict:
             payeer_id = accounts_dict[payeer_key]
         else:
-            payeer_id = get_or_create_external_account(payeer_name, payeer_currency, "external", row['location_withdraw'])
+            payeer_id = get_or_create_external_account(payeer_name, payeer_currency, "external", "General")
             accounts_dict[payeer_key] = payeer_id
 
         # Get or create account_id for paid_to
@@ -126,7 +126,7 @@ for index, row in df.iterrows():
             if paid_to_key in accounts_dict:
                 paid_to_id = accounts_dict[paid_to_key]
             else:
-                paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external", row['location_used'])
+                paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external","General")
                 accounts_dict[paid_to_key] = paid_to_id
 
         # Fetch exchange rates for the transaction date

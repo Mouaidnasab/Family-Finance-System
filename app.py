@@ -91,7 +91,7 @@ def populate_unique_values():
     cursor.execute('''
     INSERT INTO dd_Account_Names (name)
     SELECT 
-        CONCAT(Accounts.name, ' - ', Accounts.currency) AS name_currency
+        CONCAT(Accounts.name, ' ', Accounts.currency) AS name_currency
     FROM 
         Accounts
     WHERE 
@@ -556,7 +556,7 @@ def finalize_transactions():
                 if payeer_key in accounts_dict:
                     payeer_id = accounts_dict[payeer_key]
                 else:
-                    payeer_id = get_or_create_external_account(payeer_name, payeer_currency, "external", row['country_withdraw'])
+                    payeer_id = get_or_create_external_account(payeer_name, payeer_currency, "external", "General")
                     accounts_dict[payeer_key] = payeer_id
 
                 # Get or create account_id for paid_to
@@ -572,7 +572,7 @@ def finalize_transactions():
                     if paid_to_key in accounts_dict:
                         paid_to_id = accounts_dict[paid_to_key]
                     else:
-                        paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external", row['country_used'])
+                        paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external", "General")
                         accounts_dict[paid_to_key] = paid_to_id
                 # Fetch exchange rates for the transaction date
                 exchange_rates = fetch_exchange_rates(row['date'])
