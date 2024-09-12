@@ -496,7 +496,7 @@ def finalize_transactions():
         sry_to_usd_rate = 0.00006
 
         # Function to get or create external account
-        external_account_counter = 100000000
+        external_account_counter = 100000
 
         def get_or_create_external_account(account_name, currency, segment, country):
             nonlocal external_account_counter
