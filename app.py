@@ -10,6 +10,27 @@ import config
 
 
 
+
+import jwt
+import time
+
+METABASE_SITE_URL = "http://192.168.0.103:3000"
+METABASE_SECRET_KEY = "b5f7f3bba8d6e0814c70f3de3fe2b6d2749f5a3a9674e0afddf30625a3a28ccd"
+
+payload = {
+  "resource": {"dashboard": 2},
+  "params": {
+    
+    
+  },
+  "exp": round(time.time()) + (60 * 10) # 10 minute expiration
+}
+token = jwt.encode(payload, METABASE_SECRET_KEY, algorithm="HS256")
+
+iframeUrl = METABASE_SITE_URL + "/embed/dashboard/" + token + "#bordered=true&titled=true"
+
+
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 

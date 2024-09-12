@@ -100,20 +100,6 @@ def initialize_db():
         )
     ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Transactions_Details (
-            transactions_details_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            unique_description VARCHAR(255) DEFAULT NULL,
-            transaction_description VARCHAR(255) DEFAULT NULL,
-            segment VARCHAR(255) DEFAULT NULL,
-            type VARCHAR(255) DEFAULT NULL,
-            sub_type VARCHAR(255) DEFAULT NULL,
-            category VARCHAR(255) DEFAULT NULL,
-            sub_category VARCHAR(255) DEFAULT NULL,
-            country_used VARCHAR(255) DEFAULT NULL,
-            UNIQUE KEY unique_description (unique_description)
-        )
-    ''')
 
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Transactions_Temp (

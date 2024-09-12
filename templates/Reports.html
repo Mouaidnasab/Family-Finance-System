@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script type="text/javascript" src="/static/js/language.js"> </script>
+
 </head>
 <body>
     <div class="navbar">
@@ -47,11 +49,17 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script type="text/javascript" src="/static/js/language.js"> </script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             var hot;
             var container = document.getElementById('hot');
+
+            // if (typeof translatePage === 'function') {
+            //     translatePage();
+            //     updateDirection();
+            //     console.log('done transalting')
+            // }
+            // console.log('after')
 
             fetch('/dropdown_data')
                 .then(response => response.json())
@@ -171,6 +179,14 @@
                     manualColumnFreeze: true,
                     contextMenu: true,
                     wordWrap: false,
+                    contextMenu: {
+                            items: {
+                                'cut': {name: 'Cut'},
+                                'copy': {name: 'Copy'},
+                                'freeze_column': {name: 'Freeze the selected column'},
+                                'unfreeze_column': {name: 'Unfreeze the selected column'}
+                            }
+                        },
                 });
             }
 
@@ -241,5 +257,6 @@
 
 
     </script>
+
 </body>
 </html>
