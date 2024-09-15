@@ -42,17 +42,17 @@ def find_most_similar(test_description):
 
 
 # Example usage
-test_description = "d"
+test_description = "BINBIN"
 most_similar_row, similarity_score = find_most_similar(test_description)
 
 # # Print the result
 # print(f"Test Description: {test_description}")
 # print(f"Most Similar Transaction: {most_similar_row['transaction_description']}")
-# print(f"Segment: {most_similar_row['Segment']}")
-# print(f"Type: {most_similar_row['Type']}")
-# print(f"Sub_Type: {most_similar_row['Sub_Type']}")
-# print(f"Category: {most_similar_row['Category']}")
-# print(f"Sub_category: {most_similar_row['Sub_category']}")
-# print(f"Location_used: {most_similar_row['Location_used']}")
+# print(f"Segment: {most_similar_row['segment']}")
+# print(f"Type: {most_similar_row['type']}")
+# print(f"Sub_Type: {most_similar_row['sub_type']}")
+# print(f"Category: {most_similar_row['category']}")
+# print(f"Sub_category: {most_similar_row['sub_category']}")
+# print(f"Location_used: {most_similar_row['country_used']}")
 
 # print(f"Similarity Score: {similarity_score:.2f}%")

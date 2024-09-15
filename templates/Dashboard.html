@@ -33,6 +33,8 @@
         
 
         <div class="sidebar main" id="mainLayer">
+            <button class="layer-btn" id="langButton" data-lang="en">English</button>
+
             <button class="layer-btn" onclick="showLayer('dashboard')">Dashboard</button>
             <a href="{{ url_for('transactions') }}"><button class="layer-btn" >Transactions</button></a>
             <a href="{{ url_for('reports') }}"><button class="layer-btn" >Reports</button></a>
@@ -85,6 +87,7 @@
     allowtransparency
     ></iframe></div>
 
+    <script type="text/javascript" src="/static/js/language.js"> </script>
 
     <script src="/static/js/sidebar_dashboard.js"></script>
     <script>

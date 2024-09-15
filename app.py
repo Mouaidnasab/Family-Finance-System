@@ -294,7 +294,7 @@ def call_procedure_update_transactions_temp():
  
 
                 for key, value in similar_row.items():
-                    if transaction['sub_type'] == 'Direct' and key in transaction and not transaction[key]:  # Check if the type is 'Direct' and the cell is empty
+                    if transaction['sub_type'] == 'Direct' and key in transaction and  key != "Combined" and not transaction[key]:  # Check if the type is 'Direct' and the cell is empty
                         if isinstance(value, float) and np.isnan(value):  # Check if the value is nan
                             value = None  # or value = '' if you prefer to store an empty string
                         update_query = f"UPDATE Transactions_Temp SET {key} = %s WHERE transaction_id = %s"
