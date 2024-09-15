@@ -32,7 +32,9 @@ def initialize_db():
         CREATE TABLE IF NOT EXISTS Members (
             member_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             first_name VARCHAR(255) NOT NULL,
-            last_name VARCHAR(255) NOT NULL
+            last_name VARCHAR(255) NOT NULL,
+            username VARCHAR(255) NOT NULL default '' unique,
+            password VARCHAR(255) NOT NULL default ''
         )
     ''')
 

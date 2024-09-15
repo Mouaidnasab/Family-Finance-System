@@ -37,10 +37,10 @@ def insert_data_from_csv(csv_file_path):
             try:
                 cursor.execute('''
                     INSERT INTO Members (
-                        member_id, first_name, last_name
-                    ) VALUES (%s, %s, %s)
+                        member_id, first_name, last_name, username, password
+                    ) VALUES (%s, %s, %s,%s, %s)
                 ''', (
-                    row['Customer_id'], row['First_Name'], row['Last_Name']
+                    row['Customer_id'], row['First_Name'], row['Last_Name'],row['Username'], row['Password']
                 ))
             except KeyError as e:
                 print(f"KeyError: {e} - Please check your CSV file headers and ensure they match the database column names.")

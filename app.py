@@ -1,4 +1,6 @@
 from flask import Flask, request, render_template, jsonify, redirect, url_for, send_file, flash
+from flask_login import login_user, UserMixin, LoginManager, login_required, logout_user
+from flask_bcrypt import Bcrypt
 import mysql.connector
 import csv
 from io import TextIOWrapper, StringIO, BytesIO
@@ -7,16 +9,19 @@ import json
 from details_model.loading_model import find_most_similar
 import numpy as np
 import config
-
-
-
+from dropdown_populate import populate_unique_values 
 
 import jwt
 import time
 
+
+
+# Metabase variables
 METABASE_SITE_URL = "http://192.168.0.103:3000"
 METABASE_SECRET_KEY = "b5f7f3bba8d6e0814c70f3de3fe2b6d2749f5a3a9674e0afddf30625a3a28ccd"
 
+
+# Metabase token
 payload = {
   "resource": {"dashboard": 2},
   "params": {
@@ -27,99 +32,102 @@ payload = {
 }
 token = jwt.encode(payload, METABASE_SECRET_KEY, algorithm="HS256")
 
+# Metabase URL
 iframeUrl = METABASE_SITE_URL + "/embed/dashboard/" + token + "#bordered=true&titled=true"
 
 
-
+# Flask app configuration
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-def populate_unique_values():
-    conn = mysql.connector.connect(**config.db_config)
-    cursor = conn.cursor()
-
-    # Populate Segments
-    cursor.execute('''
-    INSERT INTO dd_Segments (name)
-    SELECT DISTINCT Transactions.segment FROM Transactions
-    WHERE Transactions.segment IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    # Populate Types
-    cursor.execute('''
-    INSERT INTO dd_Types (name)
-    SELECT DISTINCT Transactions.type FROM Transactions
-    WHERE Transactions.type IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    # Populate Sub_Types
-    cursor.execute('''
-    INSERT INTO dd_Sub_Types (name)
-    SELECT DISTINCT Transactions.sub_type FROM Transactions
-    WHERE Transactions.sub_type IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    # Populate Categories
-    cursor.execute('''
-    INSERT INTO dd_Categories (name)
-    SELECT DISTINCT Transactions.category FROM Transactions
-    WHERE Transactions.category IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    # Populate Sub_Categories
-    cursor.execute('''
-    INSERT INTO dd_Sub_Categories (name)
-    SELECT DISTINCT Transactions.sub_category FROM Transactions
-    WHERE Transactions.sub_category IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
 
 
-    # Populate Countries from Accounts
-    cursor.execute('''
-    INSERT INTO dd_Countries (name)
-    SELECT DISTINCT Accounts.country FROM Accounts
-    WHERE Accounts.country IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    # Populate Account_Names
-    cursor.execute('''
-    INSERT INTO dd_Account_Names (name)
-    SELECT 
-        CONCAT(Accounts.name, ' ', Accounts.currency) AS name_currency
-    FROM 
-        Accounts
-    WHERE 
-        Accounts.name IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name);
-
-    ''')
-
-    # Populate Currencies from Accounts
-    cursor.execute('''
-    INSERT INTO dd_Currencies (name)
-    SELECT DISTINCT Accounts.currency FROM Accounts
-    WHERE Accounts.currency IS NOT NULL
-    ON DUPLICATE KEY UPDATE name=VALUES(name)
-    ''')
-
-    conn.commit()
-    cursor.close()
-    conn.close()
 
 # Call the function to populate the tables
 populate_unique_values()
 
+
+# Initialize Bcrypt
+bcrypt = Bcrypt(app) 
+
+
+# Initialize Flask-Login
+class User(UserMixin):
+    def __init__(self, id, username, password):
+        self.id = id
+        self.username = username
+        self.password = password
+
+    @classmethod
+    def get_by_username(cls, username):
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT member_id, username, password FROM Members WHERE username = %s', (username,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return cls(result['member_id'], result['username'], result['password'])
+        return None
+
+    @classmethod
+    def get_by_id(cls, id):
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT member_id, username, password FROM Members WHERE member_id = %s', (id,))
+        result = cursor.fetchone()
+        conn.close()
+        if result:
+            return cls(result['member_id'], result['username'], result['password'])
+        return None
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
+
+    def set_password(self, password):
+        self.password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+# Load user
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(int(user_id))
+
+
+
+
+# Routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        user = User.get_by_username(username)
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('dashboard'))  # Adjust this as necessary
+        else:
+            flash('Invalid username or password')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()  # Log out the current user
+    flash('You have been logged out.')  # Optional: Flash a message to the user
+    return redirect(url_for('login'))
+
 @app.route('/')
+@login_required
 def dashboard():
     return render_template('Dashboard.html')
 
 @app.route('/transactions', methods=['GET', 'POST'])
+@login_required
 def transactions():
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -182,10 +190,12 @@ def transactions():
     return render_template('Transactions.html', rows=rows)
 
 @app.route('/reports')
+@login_required
 def reports():
     return render_template('Reports.html')
 
 @app.route('/download')
+@login_required
 def download_file():
     try:
         conn = mysql.connector.connect(**config.db_config)
@@ -210,6 +220,7 @@ def download_file():
     return send_file(byte_output, download_name='Transactions_Temp.csv', as_attachment=True, mimetype='text/csv')
 
 @app.route('/template_download')
+@login_required
 def template_download():
     try:
         template_path = 'static/Transactions_Templete.xlsx'
@@ -219,6 +230,7 @@ def template_download():
         return redirect(url_for('transactions'))
 
 @app.route('/update_transaction', methods=['POST'])
+@login_required
 def update_transaction():
     data = request.get_json()
     transaction_id = data['id']
@@ -238,6 +250,7 @@ def update_transaction():
     return jsonify(success=True)
 
 @app.route('/insert_transaction', methods=['POST'])
+@login_required
 def insert_transaction():
     data = request.get_json()
 
@@ -261,6 +274,7 @@ def insert_transaction():
     return jsonify(success=True)
 
 @app.route('/clear_content', methods=['POST'])
+@login_required
 def clear_content():
     try:
         conn = mysql.connector.connect(**config.db_config)
@@ -276,6 +290,7 @@ def clear_content():
         conn.close()
 
 @app.route('/UpdateTransactionsTemp')
+@login_required
 def call_procedure_update_transactions_temp():
     try:
         conn = mysql.connector.connect(**config.db_config)
@@ -291,10 +306,12 @@ def call_procedure_update_transactions_temp():
             if description:
                 # Use the find_most_similar function to get the most similar row
                 similar_row, similarity_score = find_most_similar(description)
- 
-
+                direct_check=0
+                if  similar_row.get('sub_type') == 'Direct':
+                    direct_check=1
                 for key, value in similar_row.items():
-                    if transaction['sub_type'] == 'Direct' and key in transaction and  key != "Combined" and not transaction[key]:  # Check if the type is 'Direct' and the cell is empty
+                    print(key, value)
+                    if  direct_check==1 and key in transaction and  key != "Combined" and key != "country_used"  and not transaction[key]:  # Check if the type is 'Direct' and the cell is empty
                         if isinstance(value, float) and np.isnan(value):  # Check if the value is nan
                             value = None  # or value = '' if you prefer to store an empty string
                         update_query = f"UPDATE Transactions_Temp SET {key} = %s WHERE transaction_id = %s"
@@ -313,6 +330,7 @@ def call_procedure_update_transactions_temp():
     return redirect(url_for('transactions'))
 
 @app.route('/add_transaction_detail', methods=['POST'])
+@login_required
 def add_transaction_detail():
     data = request.get_json()
 
@@ -338,6 +356,7 @@ def add_transaction_detail():
 
 
 @app.route('/dropdown_data')
+@login_required
 def dropdown_data():
     dropdown_data = {}
 
@@ -411,6 +430,7 @@ def dropdown_data():
 
 
 @app.route('/add_rows', methods=['POST'])
+@login_required
 def add_rows():
     data = request.json
     row_count = data.get('rows', 1)
@@ -432,6 +452,7 @@ def add_rows():
         conn.close()
 
 @app.route('/finalize')
+@login_required
 def finalize_transactions():
     try:
         conn = mysql.connector.connect(**config.db_config)
@@ -656,6 +677,7 @@ def finalize_transactions():
 
 
 @app.route('/filter_transactions', methods=['POST'])
+@login_required
 def filter_transactions():
     filters = request.json
     print('Received filters:', filters)  # Debugging line to print received filters
@@ -751,6 +773,7 @@ def filter_transactions():
 
 
 @app.route('/download_filtered', methods=['POST'])
+@login_required
 def download_filtered():
     filters = request.form.get('filters')
     filters = json.loads(filters)
