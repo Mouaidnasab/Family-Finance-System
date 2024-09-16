@@ -202,18 +202,7 @@ table td[contenteditable]:focus {
     outline: 2px solid var(--focus-outline-color);
 }
 
-.fixed-button {
-    position: fixed;
-    bottom: 10px;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    border: none;
-    cursor: pointer;
-    color: var(--white-color);
-    border-radius: 20px;
-    padding: 7px 13px;
-    margin: 2px;
-}
+ 
 
 .fixed-text {
     position: fixed;
@@ -242,15 +231,69 @@ table td[contenteditable]:focus {
     background-color: var(--bt-color);
 }
 
-.clear-button {
-    left: 115px;
-    background-color: var(--bt-color);
+
+/* footer */
+/* Footer stays at the bottom */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: var(--footer-background-color);
+    width: 100%;
+    position: fixed;
+    bottom: 0;
 }
 
-.submit-button {
-    right: 10px;
-    background-color: var(--bt-color);
+/* Flexbox layout for left and right sections */
+.footer-left,
+.footer-right {
+    display: flex;
+    align-items: center;
 }
+
+.footer-left .button {
+    margin-right: 10px;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+    padding-right: 28px;
+    padding-left: 28px;
+}
+
+.row-count {
+    display: flex;
+    align-items: center;
+    margin: 0 15px;
+}
+
+.row-label {
+    margin: 0 10px;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.row-number {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.button {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    cursor: pointer;
+    color: var(--white-color);
+    border-radius: 20px;
+    background-color: var(--bt-color);
+    margin: 0 5px;
+}
+
+/* footer */
+
+
 
 /* Modal Content Style */
 .modal {

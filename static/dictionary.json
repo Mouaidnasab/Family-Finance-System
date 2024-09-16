@@ -284,17 +284,21 @@
         "التقارير": "Reports",
         "المعاملات": "Transactions",
         "لوحة القيادة": "Dashboard",
-        ":عدد الصفوف": "Row Count:",
+        "عدد الصفوف": "Row Count",
         "تنزيل": "Download",
         "مسح الجدول": "Clear Table",
         "القالب": "Template",
         "تقديم": "Submit",
         "تعبئة تلقائية": "Autofill",
         "تحميل": "Upload",
-        "الخصم لكل فصل": "Discount given per quarter"
+        "الخصم لكل فصل": "Discount given per quarter",
+        "تحديد الكل": "Check All",
+        "الغاء التحديد على الكل": "Uncheck All"
       },
       
     "ar": {
+      "Check All": "تحديد الكل",
+      "Uncheck All": "الغاء التحديد على الكل",
       "Discount given per quarter": "الخصم لكل فصل",
       "All": "الكل",
       "Mustafa": "مصطفى",
@@ -580,7 +584,7 @@
       "Reports": "التقارير",
       "Transactions": "المعاملات",
       "Dashboard": "لوحة القيادة",
-      "Row Count:": ":عدد الصفوف",
+      "Row Count": "عدد الصفوف",
       "Download": "تنزيل",
       "Clear Table": "مسح الجدول",
       "Template": "القالب",

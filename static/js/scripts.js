@@ -262,3 +262,47 @@ function addRow() {
 
     document.getElementById("uploadModal").style.display = "none";
 }
+
+function checkAll() {
+    $.post('/check_all', function(response) {
+        if (response.status === 'success') {
+            showMessage(response.message, 'message');
+            location.reload();  // Reload the page to reflect changes
+        } else {
+            showMessage(response.message, 'error');
+        }
+    });
+}
+
+// Function to uncheck all checkboxes
+function uncheckAll() {
+    $.post('/uncheck_all', function(response) {
+        if (response.status === 'success') {
+            showMessage(response.message, 'message');
+            location.reload();  // Reload the page to reflect changes
+        } else {
+            showMessage(response.message, 'error');
+        }
+    });
+}function checkAll() {
+            $.post('/check_all', function(response) {
+                if (response.status === 'success') {
+                    showMessage(response.message, 'message');
+                    location.reload();  // Reload the page to reflect changes
+                } else {
+                    showMessage(response.message, 'error');
+                }
+            });
+        }
+
+        // Function to uncheck all checkboxes
+        function uncheckAll() {
+            $.post('/uncheck_all', function(response) {
+                if (response.status === 'success') {
+                    showMessage(response.message, 'message');
+                    location.reload();  // Reload the page to reflect changes
+                } else {
+                    showMessage(response.message, 'error');
+                }
+            });
+        }

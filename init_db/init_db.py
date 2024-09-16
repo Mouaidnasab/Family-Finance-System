@@ -108,6 +108,8 @@ def initialize_db():
             transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             checkbox int NOT NULL DEFAULT '0',
             source TEXT,
+            ready int NOT NULL DEFAULT '0',
+            incorrect_columns VARCHAR(255),
             date DATE DEFAULT NULL,
             segment VARCHAR(255) DEFAULT NULL,
             type VARCHAR(255) DEFAULT NULL,

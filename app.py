@@ -3,13 +3,14 @@ from flask_login import login_user, UserMixin, LoginManager, login_required, log
 from flask_bcrypt import Bcrypt
 import mysql.connector
 import csv
+from datetime import datetime
 from io import TextIOWrapper, StringIO, BytesIO
 import os
 import json 
 from details_model.loading_model import find_most_similar
 import numpy as np
 import config
-from dropdown_populate import populate_unique_values 
+from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row
 
 import jwt
 import time
@@ -114,16 +115,18 @@ def login():
             flash('Invalid username or password')
     return render_template('Login.html')
 
+
 @app.route('/logout')
 def logout():
     logout_user()  # Log out the current user
-    flash('You have been logged out.')  # Optional: Flash a message to the user
     return redirect(url_for('login'))
+
 
 @app.route('/')
 @login_required
 def dashboard():
     return render_template('Dashboard.html')
+
 @app.route('/transactions', methods=['GET', 'POST'])
 @login_required
 def transactions():
@@ -142,6 +145,8 @@ def transactions():
         CREATE TABLE IF NOT EXISTS {table_name} (
             transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             checkbox int NOT NULL DEFAULT '0',
+            ready int NOT NULL DEFAULT '0',
+            incorrect_columns VARCHAR(255),
             source TEXT,
             date DATE DEFAULT NULL,
             segment VARCHAR(255) DEFAULT NULL,
@@ -291,6 +296,7 @@ def update_transaction():
     # Get the current user's username
     username = current_user.username  # Assuming Flask-Login provides current_user
     table_name = f"Transactions_Temp_{username}"
+    print(f"Table name: {table_name}")
 
     # Parse the JSON data from the request
     data = request.get_json()
@@ -462,79 +468,72 @@ def call_procedure_update_transactions_temp():
 
     return redirect(url_for('transactions'))
 
+@app.route('/check_all', methods=['POST'])
+@login_required
+def check_all():
+    username = current_user.username
+    table_name = f"Transactions_Temp_{username}"
+    
+    try:
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor()
+        
+        # Update all rows to set checkbox = 1 (checked)
+        cursor.execute(f'UPDATE {table_name} SET checkbox = 1')
+        conn.commit()
+        
+        return jsonify({'status': 'success', 'message': 'All transactions checked.'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': f'Error checking all: {str(e)}'})
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route('/uncheck_all', methods=['POST'])
+@login_required
+def uncheck_all():
+    username = current_user.username
+    table_name = f"Transactions_Temp_{username}"
+    
+    try:
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor()
+        
+        # Update all rows to set checkbox = 0 (unchecked)
+        cursor.execute(f'UPDATE {table_name} SET checkbox = 0')
+        conn.commit()
+        
+        return jsonify({'status': 'success', 'message': 'All transactions unchecked.'})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'status': 'error', 'message': f'Error unchecking all: {str(e)}'})
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 @app.route('/dropdown_data')
 @login_required
 def dropdown_data():
-    dropdown_data = {}
-
     try:
+        # Establish a connection to the MySQL database
         conn = mysql.connector.connect(**config.db_config)
-        cursor = conn.cursor(dictionary=True)
 
-        # Fetch segments
-        cursor.execute('SELECT DISTINCT name FROM dd_Segments')
-        dropdown_data['segment'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch types
-        cursor.execute('SELECT DISTINCT name FROM dd_Types')
-        dropdown_data['type'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch sub_types
-        cursor.execute('SELECT DISTINCT name FROM dd_Sub_Types')
-        dropdown_data['sub_type'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch categories
-        cursor.execute('SELECT DISTINCT name FROM dd_Categories')
-        dropdown_data['category'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch sub_categories
-        cursor.execute('SELECT DISTINCT name FROM dd_Sub_Categories')
-        dropdown_data['sub_category'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch countries
-        cursor.execute('SELECT DISTINCT name FROM dd_Countries')
-        dropdown_data['country'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch account names
-        cursor.execute('SELECT DISTINCT name FROM dd_Account_Names')
-        dropdown_data['account_name'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch currencies
-        cursor.execute('SELECT DISTINCT name FROM dd_Currencies')
-        dropdown_data['currency'] = [row['name'] for row in cursor.fetchall()]
-
-        # Fetch unique details
-        cursor.execute('SELECT DISTINCT details FROM Details')
-        dropdown_data['details'] = [row['details'] for row in cursor.fetchall()]
-
-        # Fetch unique notes
-        cursor.execute('SELECT DISTINCT notes FROM Details')
-        dropdown_data['notes'] = [row['notes'] for row in cursor.fetchall()]
-
-        # Fetch unique sub_notes
-        cursor.execute('SELECT DISTINCT sub_notes FROM Details')
-        dropdown_data['sub_notes'] = [row['sub_notes'] for row in cursor.fetchall()]
-        
-        cursor.execute("SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM Members")
-        dropdown_data['member_name'] = [row['full_name'] for row in cursor.fetchall()]
-
-        # Fetch unique transaction descriptions
-        cursor.execute('SELECT DISTINCT transaction_description FROM Details')
-        dropdown_data['transaction_description'] = [row['transaction_description'] for row in cursor.fetchall()]
-
-        # Fetch unique amounts
-        cursor.execute('SELECT DISTINCT amount FROM Amounts')
-        dropdown_data['amount'] = [row['amount'] for row in cursor.fetchall()]
+        # Use the fetch_dropdown_data function to get dropdown data
+        dropdown_data = fetch_dropdown_data(conn)
 
     except Exception as e:
+        # Return error response in case of any exception
         return jsonify({'status': 'error', 'message': str(e)})
 
     finally:
-        cursor.close()
+        # Ensure the connection is closed
         conn.close()
 
+    # Return success response with the fetched dropdown data
     return jsonify({'status': 'success', 'data': dropdown_data})
 
 @app.route('/add_rows', methods=['POST'])
