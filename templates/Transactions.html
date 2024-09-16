@@ -6,12 +6,22 @@
     <title>Transactions</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="icon" type="image/x-icon" href="/static/images/Transactions_Icon.png">
-    <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/css/pikaday.min.css">
     <link rel="stylesheet" href="/static/css/sidebar_styles.css">
+
+
+        <!-- Toastr CSS -->
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet"/>
+
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+
+
 
     
     <style>
@@ -42,6 +52,12 @@
         .redRow {
             background-color: rgb(253, 153, 153) !important;
         }
+
+                /* Toastr position adjustments */
+                #toast-container > div {
+            opacity: 1;
+        }
+
 
 
         /* .modal {
@@ -204,7 +220,12 @@
         </div>
     </div>
 
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- Handsontable JS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+    <!-- jQuery (Ensure it's loaded before other scripts that depend on it) -->
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/static/js/scripts.js"></script>
     <script type="text/javascript" src="/static/js/language.js"> </script>
@@ -212,160 +233,343 @@
 
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
-            var data = {{ rows|tojson|safe }};
-            var dropdownData = {};
-    
-            // Fetch dropdown data
-            fetch('/dropdown_data')
-                .then(response => response.json())
-                .then(result => {
-                    if (result.status === 'success') {
-                        dropdownData = result.data;
-                        initializeHandsontable(data, dropdownData);
-                    } else {
-                        console.error('Error fetching dropdown data:', result.message);
-                        initializeHandsontable(data, NaN);
+            let dropdownData = {};
+            let tableData = [];
+            let hot;  // Declare Handsontable instance in a higher scope
 
+            // Initialize Socket.IO client
+            const socket = io();
+
+            // Function to show Toastr notifications
+            function showToast(type, message) {
+                if (type === 'success') {
+                    toastr.success(message);
+                } else if (type === 'error') {
+                    toastr.error(message);
+                } else if (type === 'info') {
+                    toastr.info(message);
+                } else if (type === 'warning') {
+                    toastr.warning(message);
+                }
+            }
+
+            // Join a room based on the user's table name
+            function joinRoom(room) {
+                socket.emit('join', {room: room});
+                console.log(`Joining room: ${room}`);
+            }
+
+            // Leave a room
+            function leaveRoom(room) {
+                socket.emit('leave', {room: room});
+                console.log(`Leaving room: ${room}`);
+            }
+
+            // Debounce function to limit the rate of function execution
+            function debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    const context = this;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+
+            // Fetch dropdown data and transactions data simultaneously
+            function fetchDataAndInitialize() {
+                Promise.all([
+                    fetch('/dropdown_data').then(response => response.json()),
+                    fetch('/get_transactions_data').then(response => response.json())
+                ])
+                .then(([dropdownResult, transactionsResult]) => {
+                    console.log('Dropdown Result:', dropdownResult);
+                    console.log('Transactions Result:', transactionsResult);
+                    if (dropdownResult.status === 'success') {
+                        dropdownData = dropdownResult.data;
+                        console.log('Dropdown data fetched successfully:', dropdownData);
+                    } else {
+                        console.error('Error fetching dropdown data:', dropdownResult.message);
+                        showToast('error', 'Failed to fetch dropdown data.');
+                    }
+
+                    if (transactionsResult.status === 'success') {
+                        tableData = transactionsResult.data;
+                        console.log('Transaction data fetched successfully:', tableData);
+                    } else {
+                        console.error('Error fetching transaction data:', transactionsResult.message);
+                        showToast('error', 'Failed to fetch transaction data.');
+                    }
+
+                    // Initialize or load data into Handsontable
+                    if (hot) {
+                        hot.loadData(tableData);
+                        hot.render();
+                        console.log('Handsontable data loaded.');
+                    } else {
+                        initializeHandsontable(tableData, dropdownData);
+                    }
+
+                    // Join the room for real-time updates
+                    const room = `Transactions_Temp_${currentUserUsername}`;
+                    joinRoom(room);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    showToast('error', 'An error occurred while fetching data.');
+                });
+            }
+
+            // Initialize Handsontable
+            function initializeHandsontable(data, dropdownData) {
+                console.log('Initializing Handsontable with data:', data);
+                data.forEach(function (row) {
+                    if (row.ready === 0) {
+                        row.checkbox = 0;  // Uncheck the checkbox if ready is 0
                     }
                 });
-    
-                function initializeHandsontable(data, dropdownData) {
-                    var container = document.getElementById('hot');
-                    var hot = new Handsontable(container, {
-                        data: data,
-                        colHeaders: [
-                            '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
-                            'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
-                            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
-                        ],
-                        columns: [
-                            {
-                                data: 'checkbox',
-                                type: 'checkbox',
-                                checkedTemplate: 1,
-                                uncheckedTemplate: 0
-                            },
-                            {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
-                            {data: 'segment', type: 'dropdown', source: dropdownData.segment ,allowInvalid: false},
-                            {data: 'type', type: 'dropdown', source: dropdownData.type,allowInvalid: false},
-                            {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type,allowInvalid: false},
-                            {data: 'category', type: 'dropdown', source: dropdownData.category,allowInvalid: false},
-                            {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete',validator: 'autocomplete',source: dropdownData.sub_category},
-                            {data: 'details'},
-                            {data: 'notes'},
-                            {data: 'sub_notes'},
-                            {data: 'transaction_description'},
-                            {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
-                            {data: 'country_used', type: 'dropdown', source: dropdownData.country,allowInvalid: false},
-                            {data: 'account_name', type: 'dropdown', source: dropdownData.account_name,allowInvalid: false},
-                            {data: 'currency', type: 'dropdown', source: dropdownData.currency,allowInvalid: false},
-                            {data: 'payeer', type: 'dropdown', source: dropdownData.account_name},
-                            {data: 'paid_to', type: 'dropdown', source: dropdownData.paid_to},
-                            {data: 'amount', type: 'numeric'},
-                            {data: 'status',  readOnly: true   }  
-                        ],
-                        manualColumnResize: true,
-                        filters: true,
-                        dropdownMenu: ['filter_by_value', 'filter_action_bar'],
-                        licenseKey: 'non-commercial-and-evaluation',
-                        manualColumnMove: true,
-                        rowHeaders: true,
-                        columnSorting: true,
-                        multiSelect: true,
-                        fillHandle: true,
-                        stretchH: 'all',
-                        
-                        manualColumnFreeze: true,
-                        contextMenu: {
-                            items: {
-                                'row_above': {name: 'Insert a row above'},
-                                'row_below': {name: 'Insert a row below'},
-                                'hsep1': '---------',
-                                'remove_row': {name: 'Remove the selected row'},
-                                'hsep2': '---------',
-                                'undo': {name: 'Undo the last action'},
-                                'redo': {name: 'Redo the last action'},
-                                'hsep3': '---------',
-                                'cut': {name: 'Cut'},
-                                'copy': {name: 'Copy'},
-                                'hsep4': '---------',
-                                'freeze_column': {name: 'Freeze the selected column'},
-                                'unfreeze_column': {name: 'Unfreeze the selected column'}
-                            }
-                        },
-                        cells: function(row, col) {
-                            let cp = {};
-                            const rowData = this.instance.getSourceDataAtRow(row);
 
-                            if (rowData.ready === 1) {
-                                cp.className = 'lightgreenRow';
-                            } else if (rowData.checkbox === 1 && rowData.ready === 1) {
-                                cp.className = 'greenRow';
-                            } else { cp.className = 'whiteRow'; }
-
-                            return cp;
+                const container = document.getElementById('hot');
+                hot = new Handsontable(container, {
+                    data: data,
+                    colHeaders: [
+                        '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
+                        'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
+                        'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
+                    ],
+                    columns: [
+                        {
+                            data: 'checkbox',
+                            type: 'checkbox',
+                            checkedTemplate: 1,
+                            uncheckedTemplate: 0,
                         },
-                        afterChange: function (changes, source) {
-                            if (source === 'loadData') {
-                                return;
-                            }
-                            changes.forEach(function ([row, col, oldValue, newValue]) {
-                                if (oldValue !== newValue) {
-                                    let rowData = hot.getSourceDataAtRow(row);
-                                    
-                                    if (rowData) {
-                                        let payload = {
-                                            id: rowData.transaction_id,
-                                            field: hot.colToProp(col),
-                                            value: newValue
-                                        };
-                                        $.ajax({
-                                            url: '/update_transaction',
-                                            type: 'POST',
-                                            contentType: 'application/json',
-                                            data: JSON.stringify(payload),
-                                            success: function (response) {
+                        {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
+                        {data: 'segment', type: 'dropdown', source: dropdownData.segment, allowInvalid: false},
+                        {data: 'type', type: 'dropdown', source: dropdownData.type, allowInvalid: false},
+                        {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type, allowInvalid: false},
+                        {data: 'category', type: 'dropdown', source: dropdownData.category, allowInvalid: false},
+                        {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete', validator: 'autocomplete', source: dropdownData.sub_category},
+                        {data: 'details'},
+                        {data: 'notes'},
+                        {data: 'sub_notes'},
+                        {data: 'transaction_description'},
+                        {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country, allowInvalid: false},
+                        {data: 'country_used', type: 'dropdown', source: dropdownData.country, allowInvalid: false},
+                        {data: 'account_name', type: 'dropdown', source: dropdownData.account_name, allowInvalid: false},
+                        {data: 'currency', type: 'dropdown', source: dropdownData.currency, allowInvalid: false},
+                        {data: 'payeer', type: 'dropdown', source: dropdownData.payeer},
+                        {data: 'paid_to', type: 'dropdown', source: dropdownData.paid_to},
+                        {data: 'amount', type: 'numeric'},
+                        // Add 'status' column if needed
+                    ],
+                    manualColumnResize: true,
+                    filters: true,
+                    dropdownMenu: ['filter_by_value', 'filter_action_bar'],
+                    licenseKey: 'non-commercial-and-evaluation',
+                    manualColumnMove: true,
+                    rowHeaders: true,
+                    columnSorting: true,
+                    multiSelect: true,
+                    fillHandle: true,
+                    stretchH: 'all',
+                    manualColumnFreeze: true,
+                    contextMenu: {
+                        items: {
+                            'row_above': {name: 'Insert a row above'},
+                            'row_below': {name: 'Insert a row below'},
+                            'hsep1': '---------',
+                            'remove_row': {name: 'Remove the selected row'},
+                            'hsep2': '---------',
+                            'undo': {name: 'Undo the last action'},
+                            'redo': {name: 'Redo the last action'},
+                            'hsep3': '---------',
+                            'cut': {name: 'Cut'},
+                            'copy': {name: 'Copy'},
+                            'hsep4': '---------',
+                            'freeze_column': {name: 'Freeze the selected column'},
+                            'unfreeze_column': {name: 'Unfreeze the selected column'}
+                        }
+                    },
+                    cells: function (row, col) {
+                        let cellProperties = {};
+                        const rowData = this.instance.getSourceDataAtRow(row);
+
+                        // Highlight the cells with errors in red
+                        if (rowData.incorrect_columns && rowData.incorrect_columns.includes(this.instance.colToProp(col))) {
+                            cellProperties.className = 'redRow';
+                        }
+
+                        if (rowData.ready === 1) {
+                            cellProperties.className = 'lightgreenRow';
+                        }
+
+                        // Uncheck and disable checkbox if ready is 0
+                        if (col === 0 && rowData.ready === 0) {
+                            // Make the checkbox uneditable
+                            cellProperties.readOnly = true;
+                        }
+
+                        // Enable checkbox if ready is 1
+                        if (col === 0 && rowData.ready === 1) {
+                            cellProperties.readOnly = false;  
+                        }
+
+                        if (rowData.ready === 1 && rowData.checkbox === 1) {
+                            cellProperties.className = 'greenRow';
+                        }
+
+                        return cellProperties;
+                    },
+                    afterChange: debounce(function (changes, source) {
+                        if (source === 'loadData') {
+                            return;
+                        }
+                        changes.forEach(function ([row, col, oldValue, newValue]) {
+                            if (oldValue !== newValue) {
+                                let rowData = hot.getSourceDataAtRow(row);
+                                
+                                if (rowData) {
+                                    let payload = {
+                                        id: rowData.transaction_id,
+                                        field: hot.colToProp(col),
+                                        value: newValue
+                                    };
+                                    console.log('Sending AJAX payload:', payload);
+                                    $.ajax({
+                                        url: '/update_transaction',
+                                        type: 'POST',
+                                        contentType: 'application/json',
+                                        data: JSON.stringify(payload),
+                                        success: function (response) {
+                                            if (response.success) {
                                                 console.log('Update successful:', response);
-                                            },
-                                            error: function (error) {
-                                                console.error('Update failed:', error);
+                                                showToast('success', 'Transaction updated successfully.');
+                                            } else {
+                                                console.error('Update failed:', response.error);
+                                                showToast('error', 'Failed to update transaction.');
                                             }
-                                        });
-                                    } else {
-                                        console.error('Row data is undefined for row:', row);
-                                    }
+                                        },
+                                        error: function (error) {
+                                            console.error('Update failed:', error);
+                                            showToast('error', 'Failed to update transaction.');
+                                        }
+                                    });
+                                } else {
+                                    console.error('Row data is undefined for row:', row);
+                                    showToast('error', 'Failed to retrieve row data.');
                                 }
-                            });
-                        },
+                            }
+                        });
+                    }, 500),  // Debounce delay: 500ms
                     afterCreateRow: function (index, amount) {
                         // Delay to ensure the row is fully created before setting data
                         setTimeout(function() {
                             let newRowData = {};
                             const columns = hot.getColHeader();
-    
+
                             columns.forEach(col => {
                                 newRowData[hot.propToCol(col)] = null;
                             });
-    
+
                             hot.setDataAtRowProp(index, Object.keys(newRowData), Object.values(newRowData));
+                            console.log('New row data:', newRowData);
                             $.ajax({
                                 url: '/insert_transaction',
                                 type: 'POST',
                                 contentType: 'application/json',
                                 data: JSON.stringify(newRowData),
                                 success: function (response) {
-                                    console.log('Insert successful:', response);
+                                    if (response.success) {
+                                        console.log('Insert successful:', response);
+                                        showToast('success', 'New transaction added successfully.');
+                                        // Optionally, emit WebSocket event to notify other clients
+                                        socket.emit('data_updated', {room: `Transactions_Temp_${currentUserUsername}`});
+                                    } else {
+                                        console.error('Insert failed:', response.error);
+                                        showToast('error', 'Failed to add new transaction.');
+                                    }
                                 },
                                 error: function (error) {
                                     console.error('Insert failed:', error);
+                                    showToast('error', 'Failed to add new transaction.');
                                 }
                             });
                         }, 0);
                     }
                 });
             }
+
+            // Function to handle real-time updates from the server
+            function setupSocketListeners() {
+                socket.on('connect', () => {
+                    console.log('Connected to WebSocket server.');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from WebSocket server.');
+                });
+
+                socket.on('data_updated', (data) => {
+                    console.log('Data updated:', data);
+                    if (data.room === `Transactions_Temp_${currentUserUsername}`) {
+                        // Fetch the updated data and refresh Handsontable
+                        fetch('/get_transactions_data')
+                            .then(response => response.json())
+                            .then(result => {
+                                if (result.status === 'success') {
+                                    hot.loadData(result.data);
+                                    hot.render();
+                                    showToast('info', 'Transactions data has been updated.');
+                                    console.log('Handsontable data refreshed.');
+                                } else {
+                                    console.error('Error fetching updated data:', result.message);
+                                    showToast('error', 'Failed to fetch updated transactions data.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error during data fetch:', error);
+                                showToast('error', 'An error occurred while fetching updated data.');
+                            });
+                    }
+                });
+            }
+
+            // Fetch current user's username from a global JavaScript variable
+            // Ensure to set this variable in your Flask template
+            const currentUserUsername = "{{ current_user.username }}";
+            console.log('Current User Username:', currentUserUsername);
+
+            // Fetch data and initialize Handsontable
+            fetchDataAndInitialize();
+
+            // Setup WebSocket listeners
+            setupSocketListeners();
+
+            // Join the user's room for real-time updates
+            joinRoom(`Transactions_Temp_${currentUserUsername}`);
+
+            // Auto-refresh Handsontable data every 30 seconds (optional, since WebSockets handle real-time updates)
+            /*
+            setInterval(function() {
+                fetch('/get_transactions_data')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.status === 'success') {
+                            hot.loadData(result.data);
+                            hot.render();
+                            console.log('Handsontable data refreshed.');
+                        } else {
+                            console.error('Error fetching transaction data:', result.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during data refresh:', error);
+                    });
+            }, 30000);  // 30 seconds
+            */
         });
     </script>
+    
     
 </body>
 </html>

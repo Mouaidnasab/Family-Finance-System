@@ -1,6 +1,6 @@
 import mysql.connector
 import config
-from datetime import datetime
+from datetime import datetime,date
 
 
 def populate_unique_values():
@@ -159,8 +159,14 @@ def validate_transaction_row(row, dropdown_data):
             # Check for date columns and validate their format
             if column == 'date':
                 try:
-                    # Try to parse the date in the yyyy-mm-dd format
-                    datetime.strptime(row[column], '%Y-%m-%d')
+                    # If the value is already a date object, skip strptime
+                    if isinstance(row[column], (datetime, date)):  # Check for datetime or date
+                        pass  # It's already a datetime or date object, no need to parse
+                    elif isinstance(row[column], str):
+                        # Parse the date if it's a string
+                        datetime.strptime(row[column], '%Y-%m-%d')
+                    else:
+                        incorrect_columns.append(column)  # Not a valid date format
                 except ValueError:
                     incorrect_columns.append(column)
                 continue  # Skip further validation for date columns
@@ -181,6 +187,67 @@ def validate_transaction_row(row, dropdown_data):
     
     # Return the list of incorrect columns and the ready flag
     return incorrect_columns, ready
+def process_transaction_change(transaction_id, username):
+    # Connect to the database using user-specific configuration
+    conn = mysql.connector.connect(**config.db_config)
+    dropdown_data = fetch_dropdown_data(conn)
+
+    
+    cursor = conn.cursor(dictionary=True)
+
+    # Pull the changed row from the user-specific table Transactions_Temp_{username}
+    table_name = f"Transactions_Temp_{username}"
+    cursor.execute(f"SELECT * FROM {table_name} WHERE transaction_id = %s", (transaction_id,))
+    transaction_row = cursor.fetchone()
+
+    if transaction_row:
+        # Run validation
+        incorrect_columns, ready = validate_transaction_row(transaction_row, dropdown_data)
+
+        # Convert the list of incorrect columns to a comma-separated string
+        incorrect_columns_str = ', '.join(incorrect_columns)
+
+        # Check if 'incorrect_columns' or 'ready' fields have actually changed
+        if incorrect_columns_str != transaction_row['incorrect_columns'] or ready != transaction_row['ready']:
+            # Only update the table if necessary to prevent unnecessary trigger activation
+            cursor.execute(f"""
+                UPDATE {table_name}
+                SET incorrect_columns = %s, ready = %s
+                WHERE transaction_id = %s
+            """, (incorrect_columns_str, ready, transaction_id))
+
+        conn.commit()
+    
+    cursor.close()
+    conn.close()
+
+
+
+def check_for_new_logs():
+    # Connect to the database using the global config
+    conn = mysql.connector.connect(**config.db_config)
+    
+    cursor = conn.cursor()
+
+    # Fetch logs that haven't been processed yet
+    cursor.execute("""
+        SELECT log_id, username, transaction_id FROM Transaction_Temp_Logs
+    """)
+    logs = cursor.fetchall()
+
+    loga =[]
+    for log in logs:
+        log_id, username, transaction_id = log
+        process_transaction_change(transaction_id, username)
+        loga.append(log_id)
+
+    for log_id in loga:
+        cursor.execute("DELETE FROM Transaction_Temp_Logs WHERE log_id = %s", (log_id,))
+    loga.clear
+        
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 # # Test case setup

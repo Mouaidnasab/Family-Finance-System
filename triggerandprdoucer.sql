@@ -78,3 +78,24 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+-- Create a log table to track changes
+CREATE TABLE IF NOT EXISTS Transaction_Logs (
+    log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    transaction_id INT NOT NULL,
+    change_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create a trigger that logs any changes (insert or update) to Transactions_Temp_{username}
+DELIMITER $$
+
+CREATE TRIGGER log_transaction_changes
+AFTER UPDATE ON Transactions_Temp_{username}
+FOR EACH ROW
+BEGIN
+    -- Insert the transaction_id into the log table
+    INSERT INTO Transaction_Logs (transaction_id) VALUES (NEW.transaction_id);
+END$$
+
+DELIMITER ;

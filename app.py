@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, jsonify, redirect, url_for, send_file, flash
 from flask_login import login_user, UserMixin, LoginManager, login_required, logout_user, current_user
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_bcrypt import Bcrypt
 import mysql.connector
 import csv
@@ -10,7 +11,7 @@ import json
 from details_model.loading_model import find_most_similar
 import numpy as np
 import config
-from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row
+from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row,check_for_new_logs
 
 import jwt
 import time
@@ -40,6 +41,15 @@ iframeUrl = METABASE_SITE_URL + "/embed/dashboard/" + token + "#bordered=true&ti
 # Flask app configuration
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
+
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+
+
 
 
 
@@ -99,7 +109,18 @@ def load_user(user_id):
     return User.get_by_id(int(user_id))
 
 
+# SocketIO Events
+@socketio.on('join')
+def handle_join(data):
+    room = data['room']
+    join_room(room)
+    print(f"User joined room: {room}")
 
+@socketio.on('leave')
+def handle_leave(data):
+    room = data['room']
+    leave_room(room)
+    print(f"User left room: {room}")
 
 # Routes
 @app.route('/login', methods=['GET', 'POST'])
@@ -133,6 +154,8 @@ def transactions():
     # Get the current user's username
     username = current_user.username  # Assuming `current_user` is from Flask-Login
     table_name = f"Transactions_Temp_{username}"
+    trigger_name = f"log_transaction_changes_{username}"  # Unique trigger name for each user table
+
     print(table_name)
 
     try:
@@ -167,10 +190,31 @@ def transactions():
             amount DOUBLE DEFAULT NULL
         )
         '''
-
-        
         cursor.execute(create_table_query)
         conn.commit()
+
+        # Create a trigger if it does not already exist
+        check_trigger_query = f'''
+        SELECT COUNT(*)
+        FROM information_schema.TRIGGERS
+        WHERE TRIGGER_NAME = '{trigger_name}' AND TRIGGER_SCHEMA = DATABASE();
+        '''
+        cursor.execute(check_trigger_query)
+        trigger_exists = cursor.fetchone()[0]
+
+        if not trigger_exists:
+            create_trigger_query = f'''
+            CREATE TRIGGER {trigger_name}
+            AFTER UPDATE ON {table_name}
+            FOR EACH ROW
+            BEGIN
+                INSERT INTO Transaction_Temp_Logs (username, transaction_id) 
+                VALUES ('{username}', NEW.transaction_id);
+            END;
+            '''
+            cursor.execute(create_trigger_query)
+            conn.commit()
+
         if request.method == 'POST':
             if 'file' not in request.files:
                 flash('No file part', 'error')
@@ -193,13 +237,15 @@ def transactions():
                     '''
                     
                     for row in csv_reader:
-                        # Ensure row has exactly 17 columns, fill missing with None
                         row = [col if col else None for col in row]
                         row += ['By uploading from website']  # Add the source column value
                         cursor.execute(insert_query, row)
 
                     conn.commit()
                     flash('File uploaded and processed successfully!', 'message')
+
+                    # Emit WebSocket event to notify other clients
+                    socketio.emit('data_updated', {'room': table_name}, room=table_name)
 
                 except Exception as e:
                     conn.rollback()
@@ -209,26 +255,44 @@ def transactions():
                     conn.close()
 
                 return redirect(url_for('transactions'))
-        print("hello")
-        # Fetch and display data from the user-specific table
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(f'SELECT * FROM {table_name}')
-        rows = cursor.fetchall()
-
-        # Replace None with empty string
-        for row in rows:
-            for key, value in row.items():
-                if value is None:
-                    row[key] = ''
 
     except Exception as e:
-        flash(f'Error fetching data: {str(e)}', 'error')
-        rows = []
+        flash(f'Error occurred: {str(e)}', 'error')
     finally:
         cursor.close()
         conn.close()
 
-    return render_template('Transactions.html', rows=rows)
+    # Render the template without passing any rows
+    return render_template('Transactions.html')
+
+
+@app.route('/get_transactions_data', methods=['GET'])
+@login_required
+def get_transactions_data():
+    try:
+        username = current_user.username
+        table_name = f"Transactions_Temp_{username}"
+
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(f'SELECT * FROM {table_name}')
+        rows = cursor.fetchall()
+
+        # Replace None with an empty string for frontend display purposes
+        for row in rows:
+            for key, value in row.items():
+                if value is None:
+                    row[key] = ''
+        # print(rows)
+
+        return jsonify({'status': 'success', 'data': rows})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 @app.route('/reports')
@@ -289,7 +353,7 @@ def template_download():
         flash(f'Error downloading template: {str(e)}', 'error')
         return redirect(url_for('transactions'))
 
-
+# Update `/update_transaction` to emit WebSocket events upon successful updates
 @app.route('/update_transaction', methods=['POST'])
 @login_required
 def update_transaction():
@@ -311,7 +375,6 @@ def update_transaction():
 
         # Construct dynamic update query based on the field and transaction ID
         update_query = f"UPDATE {table_name} SET {field} = %s WHERE transaction_id = %s"
-        print(f"Executing query: {update_query}")  # Debugging: print the query
         cursor.execute(update_query, (value, transaction_id))
 
         # Optionally call a stored procedure if required
@@ -319,6 +382,9 @@ def update_transaction():
 
         # Commit changes to the database
         connection.commit()
+        check_for_new_logs()    
+        # Emit WebSocket event to notify other clients about the update
+        socketio.emit('data_updated', {'room': table_name}, room=table_name)
 
         # Return success message
         return jsonify(success=True)
@@ -945,231 +1011,7 @@ def download_filtered():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=4300)
+    socketio.run(app, debug=True, host="0.0.0.0", port=4300)
 
 
 
-
-
-# @app.route('/finalize')
-# @login_required
-# def finalize_transactions():
-#     try:
-#         conn = mysql.connector.connect(**config.db_config)
-#         cursor = conn.cursor(dictionary=True)
-#         cursor.execute('SELECT * FROM Transactions_Temp')
-#         rows = cursor.fetchall()
-        
-#         required_columns = [
-#             'date', 'segment', 'type', 'sub_type', 'category',
-#             'country_used', 'account_name', 'currency', 'payeer', 'paid_to', 'amount'
-#         ]
-
-#         # Check for missing fields and skip empty rows
-#         valid_rows = []
-#         for row in rows:
-#             # Ignore the 'source' column
-#             row_without_inserted = {k: v for k, v in row.items() if k not in ['source', 'transaction_id']}
-#             is_row_empty = all(value in [None, ''] for value in row_without_inserted.values())
-#             if is_row_empty:
-#                 continue  # Skip the row if all cells are empty
-
-#             if any(row[col] is None or row[col] == '' for col in required_columns):
-#                 flash('Some fields are missing. Please correct them before finalizing.', 'error')
-#                 return redirect(url_for('transactions'))
-            
-#             valid_rows.append(row)
-
-#         # Fetch existing accounts and members
-#         cursor.execute('SELECT account_id, name, currency FROM Accounts')
-#         accounts_data = cursor.fetchall()
-
-#         # Debugging: Print fetched accounts data
-#         # print("Fetched Accounts Data:", accounts_data)
-
-#         # Create a dictionary for account lookup
-#         accounts_dict = {(acc['name'], acc['currency']): acc['account_id'] for acc in accounts_data}
-
-#         # Debugging: Print the accounts dictionary
-#         # print("Accounts Dictionary:", accounts_dict)
-
-#         cursor.execute('SELECT member_id, first_name, last_name FROM Members')
-#         members_data = cursor.fetchall()
-
-#         # Debugging: Print fetched members data
-#         # print("Fetched Members Data:", members_data)
-
-#         members_dict = {f"{member['first_name'].lower()} {member['last_name'].lower()}": member['member_id'] for member in members_data}
-
-#         # Debugging: Print the members dictionary
-#         # print("Members Dictionary:", members_dict)
-
-#         # VAT percentages by country
-#         vat_percentages = {
-#             "saudi arabia": 0.15,
-#             "bulgaria": 0.20,
-#             "turkey": 0.18,
-#             "syria": 0.10,
-#         }
-
-#         # Static conversion rates
-#         sr_to_usd_rate = 0.2667
-#         sry_to_usd_rate = 0.00006
-
-#         # Function to get or create external account
-#         external_account_counter = 100000
-
-#         def get_or_create_external_account(account_name, currency, segment, country):
-#             nonlocal external_account_counter
-
-#             cursor.execute('''
-#                 SELECT account_id FROM Accounts WHERE name = %s AND currency = %s AND segment = %s
-#             ''', (account_name, currency, segment))
-
-#             account_id = cursor.fetchone()
-#             if account_id:
-#                 return account_id[0]
-#             else:
-#                 account_id = external_account_counter
-#                 cursor.execute('''
-#                     INSERT INTO Accounts (account_id, name, currency, segment, country) VALUES (%s, %s, %s, %s, %s)
-#                 ''', (account_id, account_name, currency, segment, country))
-#                 external_account_counter += 1
-#                 return account_id
-            
-#         # Function to fetch exchange rates
-#         def fetch_exchange_rates(date):
-#             cursor.execute('''
-#                 SELECT usd_to_bgn, usd_to_eur, usd_to_try, bgn_to_usd, eur_to_usd, try_to_usd
-#                 FROM Rates
-#                 WHERE date = %s
-#             ''', (date,))
-#             result = cursor.fetchone()
-#             if result:
-#                 return {key: float(value) for key, value in result.items()}
-#             return None
-
-#         # Helper function to split account name and currency
-#         def split_account_name_currency(account_str):
-#             parts = account_str.rsplit(' ', 1)
-#             if len(parts) == 2 and parts[1] in ['SR', 'USD', 'BGN', 'TRY', 'SRY']:
-#                 return parts[0], parts[1]
-#             return account_str, None
-
-#         # Iterate over the valid rows and insert data into respective tables
-#         for row in valid_rows:
-#             try:
-#                 # Handle missing data by filling with None
-#                 row = {k: (v if v != '' else None) for k, v in row.items()}
-
-#                 # Get account_id based on account_name and currency
-#                 account_key = (row['account_name'], row['currency'])
-#                 if account_key in accounts_dict:
-#                     account_id = accounts_dict[account_key]
-#                 else:
-#                     flash(f"Account {row['account_name']} with currency {row['currency']} does not exist.", 'error')
-#                     return redirect(url_for('transactions'))
-#                 # Get or create account_id for payeer
-#                 payeer_name, payeer_currency = split_account_name_currency(row['payeer'])
-#                 if not payeer_currency:
-#                     payeer_currency = row['currency']
-#                 payeer_key = (payeer_name, payeer_currency)
-#                 if payeer_key in accounts_dict:
-#                     payeer_id = accounts_dict[payeer_key]
-#                 else:
-#                     payeer_id = get_or_create_external_account(payeer_name, payeer_currency, "external", "General")
-#                     accounts_dict[payeer_key] = payeer_id
-
-#                 # Get or create account_id for paid_to
-#                 paid_to_id = None
-#                 to_whom_id = None
-#                 paid_to_name, paid_to_currency = split_account_name_currency(row['paid_to'])
-#                 if not paid_to_currency:
-#                     paid_to_currency = row['currency']
-#                 if paid_to_name and paid_to_name.lower() in members_dict:
-#                     to_whom_id = members_dict[paid_to_name.lower()]
-#                 else:
-#                     paid_to_key = (paid_to_name, paid_to_currency)
-#                     if paid_to_key in accounts_dict:
-#                         paid_to_id = accounts_dict[paid_to_key]
-#                     else:
-#                         paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external", "General")
-#                         accounts_dict[paid_to_key] = paid_to_id
-#                 # Fetch exchange rates for the transaction date
-#                 exchange_rates = fetch_exchange_rates(row['date'])
-#                 if not exchange_rates:
-#                     continue  # Skip if exchange rates are not found for the date
-                
-#                 # Extract exchange rates from the dictionary
-#                 bgn_to_usd = exchange_rates['bgn_to_usd']
-#                 eur_to_usd = exchange_rates['eur_to_usd']
-#                 try_to_usd = exchange_rates['try_to_usd']
-
-#                 # Calculate VAT
-#                 country_used_lower = row['country_used'].lower()
-#                 vat = vat_percentages.get(country_used_lower, 0)
-#                 # Calculate amounts in USD and SR
-#                 amount_in_usd = None
-#                 currency = row['currency'].lower()  # Convert currency to lower case
-
-#                 if row['amount'] is not None:  # Check if amount is not None
-#                     amount = float(row['amount'])  # Convert amount to float
-
-#                     if currency == 'usd':
-#                         amount_in_usd = amount
-#                     elif currency == 'bgn':
-#                         amount_in_usd = amount * bgn_to_usd
-#                     elif currency == 'eur':
-#                         amount_in_usd = amount * eur_to_usd
-#                     elif currency == 'try':
-#                         amount_in_usd = amount * try_to_usd
-#                     elif currency == 'sr':
-#                         amount_in_usd = amount * sr_to_usd_rate
-#                     elif currency == 'sry':
-#                         amount_in_usd = amount * sry_to_usd_rate
-
-#                 else:
-#                     amount_in_usd = None
-
-
-#                 amount_in_sr = amount_in_usd * 3.75 if amount_in_usd else None
-#                 # print('Transactions: ',account_id, row['date'], row['segment'], row['type'], row['sub_type'], row['category'], row['sub_category'], row['country_used'], payeer_id, paid_to_id, to_whom_id)
-#                 # print('Amounts: ', row['amount'], vat, amount_in_usd, amount_in_sr)
-#                 # print('Details: ', row['details'], row['notes'], row['sub_notes'], row['transaction_description'])
-
-#                 # Insert into Transactions table
-#                 cursor.execute('''
-#                     INSERT INTO Transactions (account_id, date, segment, type, sub_type, category, sub_category, country_used, payeer_id, paid_to_id, to_whom_id)
-#                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-#                 ''', (account_id, row['date'], row['segment'], row['type'], row['sub_type'], row['category'], row['sub_category'], row['country_used'], payeer_id, paid_to_id, to_whom_id))
-
-#                 transaction_id = cursor.lastrowid
-
-#                 # Insert into Amounts table
-#                 cursor.execute('''
-#                     INSERT INTO Amounts (transaction_id, amount, vat, in_usd, in_sr)
-#                     VALUES (%s, %s, %s, %s, %s)
-#                 ''', (transaction_id, row['amount'], vat, amount_in_usd, amount_in_sr))
-
-#                 # Insert into Details table
-#                 cursor.execute('''
-#                     INSERT INTO Details (transaction_id, details, notes, sub_notes, transaction_description)
-#                     VALUES (%s, %s, %s, %s, %s)
-#                 ''', (transaction_id, row['details'], row['notes'], row['sub_notes'], row['transaction_description']))
-
-#             except Exception as e:
-#                 conn.rollback()
-#                 print('Error processing row: ', str(e))
-#                 flash(f'Error processing row: {str(e)}', 'error')
-#                 return redirect(url_for('transactions'))
-
-#         cursor.execute('TRUNCATE TABLE Transactions_Temp')
-#         conn.commit()
-#         flash('Transactions successfully finalized!', 'message')
-#     except Exception as e:
-#         conn.rollback()
-#         flash(f'Error finalizing transactions: {str(e)}', 'error')
-#     finally:
-#         cursor.close()
-#         conn.close()
-#     return redirect(url_for('transactions'))
