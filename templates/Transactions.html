@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,46 +58,6 @@
             opacity: 1;
         }
 
-
-
-        /* .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-        }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        #navigationButtons {
-            display: flex;
-            justify-content: space-between;
-        }
-        #confirmButton {
-            display: none;
-        } */
     </style>
 </head>
 <body>
@@ -109,12 +69,12 @@
         <div class="sidebar main" id="mainLayer">
              <button class="layer-btn" id="langButton" data-lang="en">English</button>
 
-             <a href="{{ url_for('dashboard') }}"><button class="layer-btn" >Dashboard</button></a>
-             <button class="layer-btn" onclick="showLayer('transactions')">Transactions</button>
-            <a href="{{ url_for('reports') }}"><button class="layer-btn" >Reports</button></a>
+             <a href="{{ url_for('dashboard') }}"><button class="layer-btn" data-translate="Dashboard">Dashboard</button></a>
+             <button class="layer-btn" onclick="showLayer('transactions')" data-translate="Transactions">Transactions</button>
+            <a href="{{ url_for('reports') }}"><button class="layer-btn" data-translate="Reports">Reports</button></a>
     
             <div class="profile-section">
-                <a href="{{ url_for('logout') }}"><button class="profile-btn">Profile</button></a>
+                <a href="{{ url_for('logout') }}"><button class="profile-btn" data-translate="Profile">Profile</button></a>
                 <button class="settings-btn">
                     <!-- Example illustration for settings icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
@@ -128,7 +88,7 @@
         <div class="sidebar layer" id="transactionsLayer">
             <div class="layer-header">
                 <button class="back-btn" onclick="showLayer('main')">←</button>
-                <h2>Transactions</h2>
+                <h2 data-translate="Transactions">Transactions</h2>
             </div>
             <!-- Add content related to Transactions -->
         </div>
@@ -149,9 +109,10 @@
         {% endwith %}
     </div>
     <div class="sub-navbar">
-        <button onclick="callUpdateTransactionsTemp()">Autofill</button>
-        <a href="{{ url_for('download_file') }}" onclick="showMessage('File downloaded successfully!', 'message');"><button>Download</button></a>
-        <button id="uploadBtn">Upload</button>
+        <button onclick="callUpdateTransactionsTemp()" data-translate="Autofill">Autofill</button>
+
+        <button id="downloadButton" class="download-btn">Download</button>
+        <button id="uploadBtn" data-translate="Upload">Upload</button>
     </div>
     <div class="fixed-table-container border">
         <div id="hot"></div>
@@ -159,21 +120,19 @@
     <div class="footer">
         <!-- Left Section for Template, Clear, Check All, Uncheck All -->
         <div class="footer-left">
-            <a href="{{ url_for('template_download') }}" onclick="showMessage('Template downloaded successfully!', 'message');">
-                <button class="button template-button">Template</button>
-            </a>
-            <button class="button" onclick="clearTable()">Clear Table</button>
-            <button class="button" onclick="checkAll()">Check All</button>
-            <button class="button" onclick="uncheckAll()">Uncheck All</button>
+            <button id="downloadTemplateButton"class="button template-button" data-translate="Template">Template</button>
+            <button class="button" onclick="clearTable()" data-translate="Clear Table">Clear Table</button>
+            <button class="button" onclick="checkAll()" data-translate="Check All">Check All</button>
+            <button class="button" onclick="uncheckAll()" data-translate="Uncheck All">Uncheck All</button>
         </div>
     
         <!-- Right Section for Submit and Row Count -->
         <div class="footer-right">
             <div class="row-count">
-                <span class="row-label">Row Count</span>
-                <span class="row-number">{{ rows|length }}</span>
+                <span class="row-label" data-translate="Row Count">Row Count</span>
+                <span class="row-number" id="rowCount">0</span>
             </div>
-                <a href="{{ url_for('finalize_transactions') }}"  method="get"><button class="button" type="submit">Submit</button></a>
+                <a href="{{ url_for('finalize_transactions') }}"  method="get"><button class="button" type="submit" data-translate="Submit">Submit</button></a>
         </div>
     </div>
     
@@ -182,12 +141,13 @@
             <span class="close">&times;</span>
             <div class="upload-section">
                 <form method="POST" enctype="multipart/form-data" style="display: flex; justify-content: space-between; width: 100%;" action="{{ url_for('transactions') }}">
-                    <input class="file-input" type="file" name="file" accept=".csv">
-                    <input class="upload-btn" type="submit" value="Upload Excel">
+                    <input class="file-input" type="file" name="file" accept=".xlsx" data-translate-placeholder="Choose File">
+                    <input class="upload-btn" type="submit" value="Upload Excel" data-translate-value="Upload Excel">
+
                 </form>
                 <form style="display: flex; justify-content: space-between; width: 100%;" onsubmit="event.preventDefault(); addRow();">
-                    <input class="input__field" type="number" id="addrows" name="addrows" placeholder="Choose Rows to Add" min="1">
-                    <input class="upload-btn" type="submit" value="Upload Manual">
+                    <input class="input__field" type="number" id="addrows" name="addrows" placeholder="Choose Rows to Add" min="1" data-translate-placeholder="Choose Rows to Add">
+                    <input class="upload-btn" type="submit" value="Upload Manual" data-translate-value="Manual Upload">
                 </form>
             </div>
         </div>
@@ -205,11 +165,30 @@
     <script type="text/javascript" src="/static/js/language.js"> </script>
     <script src="/static/js/sidebar_transactions.js"></script>
 
+
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function () {
             let dropdownData = {};
             let tableData = [];
             let hot;  // Declare Handsontable instance in a higher scope
+
+
+            const headersEnglish = [
+            '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
+            'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
+            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
+            ];
+
+            const headersArabic = [
+                '', 'التاريخ', 'القطعة', 'النوع', 'النوع الفرعي', 'الفئة', 'الفئة الفرعية', 'التفاصيل', 'ملاحظات', 
+                'ملاحظات فرعية', 'وصف المعاملة', 'بلد السحب', 'البلد المستخدم', 
+                'اسم الحساب', 'العملة', 'المدفوع', 'المدفوع إلى', 'المبلغ', 'الحالة'
+            ];
+
+            // Use static headers based on current language
+            function getColumnHeadersByLanguage(language) {
+                return language === 'en' ? headersEnglish : headersArabic;
+            }
 
             // Initialize Socket.IO client
             const socket = io();
@@ -239,6 +218,17 @@
                 console.log(`Leaving room: ${room}`);
             }
 
+            // Function to translate dropdown data
+            function translateDropdownData(dropdownData, currentLang, dictionary) {
+                let translatedDropdownData = {};
+
+                for (let key in dropdownData) {
+                    translatedDropdownData[key] = dropdownData[key].map(item => translateText(item, currentLang, dictionary));
+                }
+
+                return translatedDropdownData;
+            }
+
             // Debounce function to limit the rate of function execution
             function debounce(func, wait) {
                 let timeout;
@@ -249,34 +239,40 @@
                 };
             }
 
-            // Fetch dropdown data and transactions data simultaneously
+            // Modify fetchDataAndInitialize function to handle dropdown translation
             function fetchDataAndInitialize() {
                 Promise.all([
                     fetch('/dropdown_data').then(response => response.json()),
-                    fetch('/get_transactions_data').then(response => response.json())
+                    fetch('/get_transactions_data').then(response => response.json()),
                 ])
                 .then(([dropdownResult, transactionsResult]) => {
                     console.log('Dropdown Result:', dropdownResult);
                     console.log('Transactions Result:', transactionsResult);
+                    
                     if (dropdownResult.status === 'success') {
-                        dropdownData = dropdownResult.data;
-                        console.log('Dropdown data fetched successfully:', dropdownData);
+                        // Translate dropdown data based on the current language
+                        dropdownData = translateDropdownData(dropdownResult.data, currentLang, dictionary);
+                        console.log('Dropdown data fetched and translated successfully:', dropdownData);
                     } else {
                         console.error('Error fetching dropdown data:', dropdownResult.message);
                         showToast('error', 'Failed to fetch dropdown data.');
                     }
 
                     if (transactionsResult.status === 'success') {
-                        tableData = transactionsResult.data;
-                        console.log('Transaction data fetched successfully:', tableData);
+                        tableData = translateData(transactionsResult.data);  // Translate the table data
+                        console.log('Transaction data fetched and translated successfully:', tableData);
+                        updateRowCount(tableData.length);
                     } else {
                         console.error('Error fetching transaction data:', transactionsResult.message);
                         showToast('error', 'Failed to fetch transaction data.');
                     }
 
-                    // Initialize or load data into Handsontable
+                    // Initialize or update Handsontable with translated data and dropdowns
                     if (hot) {
-                        hot.loadData(tableData);
+                        hot.updateSettings({
+                            data: tableData,
+                            columns: generateColumnsWithTranslatedDropdowns(dropdownData), // Pass translated dropdowns
+                        });
                         hot.render();
                         console.log('Handsontable data loaded.');
                     } else {
@@ -293,9 +289,59 @@
                 });
             }
 
+
+            // Function to translate data based on current language
+            function translateData(data) {
+                return data.map(row => {
+                    let translatedRow = {...row};
+                    for (let key in translatedRow) {
+                        if (typeof translatedRow[key] === 'string') {
+                            translatedRow[key] = translateText(translatedRow[key], currentLang, dictionary);
+                        }
+                    }
+                    return translatedRow;
+                });
+            }
+
+
+            // Function to get the English version of a dropdown value from the dictionary
+            function translateToEnglish(value) {
+                const currentLang = 'en'; // We are translating to English, so always use 'en'
+
+                // Ensure dictionary and the specific language data exist
+                if (dictionary[currentLang]) {
+                    const translations = dictionary[currentLang]; // Get the translations for 'en'
+
+                    // Return the translated value if it exists, otherwise return the original value
+                    return translations[value] || value;
+                } else {
+                    console.error('Dictionary for English is not loaded.');
+                    return value; // Return the original value if dictionary isn't loaded
+                }
+            }
+
+
+            // Function to translate dropdown values to English before sending to the server
+            function translateDropdownValuesToEnglish(rowData) {
+                const translatedData = {...rowData};  // Create a copy of the rowData
+
+                // Loop through the fields that need translation
+                ['segment', 'type', 'sub_type', 'category', 'sub_category', 'currency', 'country_withdraw', 'country_used', 'payeer', 'paid_to', 'account_name'].forEach(field => {
+                    if (translatedData[field]) {
+                        // Translate the value to English using the dictionary
+                        translatedData[field] = translateToEnglish(translatedData[field], field);
+                    }
+                });
+
+                return translatedData;
+            }
+
+
+
             // Initialize Handsontable
-            function initializeHandsontable(data, dropdownData) {
+            function initializeHandsontable(data, translatedDropdownData) {
                 console.log('Initializing Handsontable with data:', data);
+
                 data.forEach(function (row) {
                     if (row.ready === 0) {
                         row.checkbox = 0;  // Uncheck the checkbox if ready is 0
@@ -303,13 +349,11 @@
                 });
 
                 const container = document.getElementById('hot');
+                const headers = getColumnHeadersByLanguage(currentLang); // Use static headers based on the selected language
+
                 hot = new Handsontable(container, {
                     data: data,
-                    colHeaders: [
-                        '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
-                        'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
-                        'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
-                    ],
+                    colHeaders: headers,
                     columns: [
                         {
                             data: 'checkbox',
@@ -318,21 +362,21 @@
                             uncheckedTemplate: 0,
                         },
                         {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
-                        {data: 'segment', type: 'dropdown', source: dropdownData.segment, allowInvalid: false},
-                        {data: 'type', type: 'dropdown', source: dropdownData.type, allowInvalid: false},
-                        {data: 'sub_type', type: 'dropdown', source: dropdownData.sub_type, allowInvalid: false},
-                        {data: 'category', type: 'dropdown', source: dropdownData.category, allowInvalid: false},
-                        {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete', validator: 'autocomplete', source: dropdownData.sub_category},
+                        {data: 'segment', type: 'dropdown', source: translatedDropdownData.segment, allowInvalid: false},
+                        {data: 'type', type: 'dropdown', source: translatedDropdownData.type, allowInvalid: false},
+                        {data: 'sub_type', type: 'dropdown', source: translatedDropdownData.sub_type, allowInvalid: false},
+                        {data: 'category', type: 'dropdown', source: translatedDropdownData.category, allowInvalid: false},
+                        {data: 'sub_category', type: 'autocomplete', editor: 'autocomplete', validator: 'autocomplete', source: translatedDropdownData.sub_category},
                         {data: 'details'},
                         {data: 'notes'},
                         {data: 'sub_notes'},
                         {data: 'transaction_description'},
-                        {data: 'country_withdraw', type: 'dropdown', source: dropdownData.country, allowInvalid: false},
-                        {data: 'country_used', type: 'dropdown', source: dropdownData.country, allowInvalid: false},
-                        {data: 'account_name', type: 'dropdown', source: dropdownData.account_name, allowInvalid: false},
-                        {data: 'currency', type: 'dropdown', source: dropdownData.currency, allowInvalid: false},
-                        {data: 'payeer', type: 'dropdown', source: dropdownData.payeer},
-                        {data: 'paid_to', type: 'dropdown', source: dropdownData.paid_to},
+                        {data: 'country_withdraw', type: 'dropdown', source: translatedDropdownData.country, allowInvalid: false},
+                        {data: 'country_used', type: 'dropdown', source: translatedDropdownData.country, allowInvalid: false},
+                        {data: 'account_name', type: 'dropdown', source: translatedDropdownData.account_name, allowInvalid: false},
+                        {data: 'currency', type: 'dropdown', source: translatedDropdownData.currency, allowInvalid: false},
+                        {data: 'payeer', type: 'dropdown', source: translatedDropdownData.payeer},
+                        {data: 'paid_to', type: 'dropdown', source: translatedDropdownData.paid_to},
                         {data: 'amount', type: 'numeric'},
                         // Add 'status' column if needed
                     ],
@@ -398,16 +442,21 @@
                         if (source === 'loadData') {
                             return;
                         }
+
                         changes.forEach(function ([row, col, oldValue, newValue]) {
                             if (oldValue !== newValue) {
                                 let rowData = hot.getSourceDataAtRow(row);
-                                
+
                                 if (rowData) {
+                                    // Translate dropdown values to English
+                                    const translatedData = translateDropdownValuesToEnglish(rowData);
+
                                     let payload = {
-                                        id: rowData.transaction_id,
+                                        id: translatedData.transaction_id,
                                         field: hot.colToProp(col),
-                                        value: newValue
+                                        value: translatedData[hot.colToProp(col)], // Send the translated English value
                                     };
+
                                     console.log('Sending AJAX payload:', payload);
                                     $.ajax({
                                         url: '/update_transaction',
@@ -435,41 +484,39 @@
                             }
                         });
                     }, 500),  // Debounce delay: 500ms
+                    // Debounce delay: 500ms
                     afterCreateRow: function (index, amount) {
-                        // Delay to ensure the row is fully created before setting data
                         setTimeout(function() {
-                            let newRowData = {};
-                            const columns = hot.getColHeader();
+                            let newRowData = hot.getSourceDataAtRow(index);
 
-                            columns.forEach(col => {
-                                newRowData[hot.propToCol(col)] = null;
-                            });
+                            if (newRowData) {
+                                // Translate dropdown values to English
+                                const translatedData = translateDropdownValuesToEnglish(newRowData);
 
-                            hot.setDataAtRowProp(index, Object.keys(newRowData), Object.values(newRowData));
-                            console.log('New row data:', newRowData);
-                            $.ajax({
-                                url: '/insert_transaction',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                data: JSON.stringify(newRowData),
-                                success: function (response) {
-                                    if (response.success) {
-                                        console.log('Insert successful:', response);
-                                        showToast('success', 'New transaction added successfully.');
-                                        // Optionally, emit WebSocket event to notify other clients
-                                        socket.emit('data_updated', {room: `Transactions_Temp_${currentUserUsername}`});
-                                    } else {
-                                        console.error('Insert failed:', response.error);
+                                $.ajax({
+                                    url: '/insert_transaction',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify(translatedData),  // Send translated English data
+                                    success: function (response) {
+                                        if (response.success) {
+                                            console.log('Insert successful:', response);
+                                            showToast('success', 'New transaction added successfully.');
+                                            socket.emit('data_updated', {room: `Transactions_Temp_${currentUserUsername}`});
+                                        } else {
+                                            console.error('Insert failed:', response.error);
+                                            showToast('error', 'Failed to add new transaction.');
+                                        }
+                                    },
+                                    error: function (error) {
+                                        console.error('Insert failed:', error);
                                         showToast('error', 'Failed to add new transaction.');
                                     }
-                                },
-                                error: function (error) {
-                                    console.error('Insert failed:', error);
-                                    showToast('error', 'Failed to add new transaction.');
-                                }
-                            });
+                                });
+                            }
                         }, 0);
                     }
+
                 });
             }
 
@@ -491,8 +538,10 @@
                             .then(response => response.json())
                             .then(result => {
                                 if (result.status === 'success') {
-                                    hot.loadData(result.data);
+                                    tableData = translateData(result.data);
+                                    hot.loadData(tableData);
                                     hot.render();
+                                    updateRowCount(tableData.length);
                                     showToast('info', 'Transactions data has been updated.');
                                     console.log('Handsontable data refreshed.');
                                 } else {
@@ -506,6 +555,43 @@
                             });
                     }
                 });
+            }
+
+            // Function to update row count
+            function updateRowCount(count) {
+                document.getElementById('rowCount').textContent = count;
+            }
+
+            // Translate text based on the dictionary and current language
+            function translateText(text, lang, dictionary) {
+                return dictionary[lang][text] || text;
+            }
+
+            // Translate column headers with the language
+            function translateHeaders(headers) {
+                return headers.map(header => translateText(header, currentLang, dictionary));
+            }
+
+            // Translate data before giving to Handsontable
+            function translateData(data) {
+                return data.map(row => {
+                    let translatedRow = {...row};
+                    for (let key in translatedRow) {
+                        if (typeof translatedRow[key] === 'string') {
+                            translatedRow[key] = translateText(translatedRow[key], currentLang, dictionary);
+                        }
+                    }
+                    return translatedRow;
+                });
+            }
+
+            // Function to handle language changes
+            function handleLanguageChange(newLang) {
+                currentLang = newLang;
+                localStorage.setItem('lang', currentLang);
+                translatePage(dictionary, currentLang);
+                updateDirection(currentLang);
+                fetchDataAndInitialize();
             }
 
             // Fetch current user's username from a global JavaScript variable
@@ -529,8 +615,10 @@
                     .then(response => response.json())
                     .then(result => {
                         if (result.status === 'success') {
-                            hot.loadData(result.data);
+                            tableData = translateData(result.data);
+                            hot.loadData(tableData);
                             hot.render();
+                            updateRowCount(tableData.length);
                             console.log('Handsontable data refreshed.');
                         } else {
                             console.error('Error fetching transaction data:', result.message);
@@ -543,7 +631,126 @@
             */
         });
     </script>
+
+<script type="text/javascript">
+    // Declare global variables
+    let currentLang = localStorage.getItem('lang') || 'en'; // Set default language
+    let dictionary = {}; // Initialize an empty dictionary
+    
+    // Function to translate text based on the current language and dictionary
+    function translateText(text, lang, dictionary) {
+        return dictionary[lang] && dictionary[lang][text] || text; // Return translated text if available, else original text
+    }
+    
+    // Function to translate all elements with the "data-translate" attribute
+    function translatePage(dictionary, currentLang) {
+        const elements = document.querySelectorAll('[data-translate]');
+        elements.forEach(element => {
+            const key = element.getAttribute('data-translate');
+            if (key && dictionary[currentLang] && dictionary[currentLang][key]) {
+                element.textContent = dictionary[currentLang][key];
+            }
+        });
+
+            // Translate input placeholders
+        const placeholderElements = document.querySelectorAll('[data-translate-placeholder]');
+        placeholderElements.forEach(element => {
+            const key = element.getAttribute('data-translate-placeholder');
+            if (key && dictionary[currentLang] && dictionary[currentLang][key]) {
+                element.placeholder = dictionary[currentLang][key];
+            }
+        });
+
+        // Translate input values (like submit buttons)
+        const valueElements = document.querySelectorAll('[data-translate-value]');
+        valueElements.forEach(element => {
+            const key = element.getAttribute('data-translate-value');
+            if (key && dictionary[currentLang] && dictionary[currentLang][key]) {
+                element.value = dictionary[currentLang][key];
+            }
+        });
+        }
+    
+    // Function to update the page direction (RTL or LTR) based on the current language
+    function updateDirection(currentLang) {
+        document.body.classList.toggle('rtl', currentLang === 'ar');
+        document.body.classList.toggle('ltr', currentLang === 'en');
+        updateLanguageAttribute(currentLang);
+    }
+    
+    // Function to update the `lang` attribute of the HTML tag
+    function updateLanguageAttribute(currentLang) {
+        document.documentElement.lang = currentLang;
+    }
+    
+    // Function to handle the click event of the language button
+    function handleLanguageChange() {
+        currentLang = (currentLang === 'en') ? 'ar' : 'en'; // Toggle language
+        localStorage.setItem('lang', currentLang); // Save the selected language to localStorage
+
+        location.reload();
+    
+        // Update the button text based on the selected language
+        const langButton = document.getElementById('langButton');
+        langButton.textContent = (currentLang === 'en') ? 'عربي' : 'English';
+    
+        // Perform the translation and update direction
+        translatePage(dictionary, currentLang);
+        updateDirection(currentLang);
+
+    }
+    
+    // Load the translation dictionary file
+    function loadDictionary() {
+        return fetch('/static/dictionary.json')
+            .then(response => response.json())
+            .then(dict => {
+                dictionary = dict; // Assign the loaded dictionary to the global variable
+                console.log('Dictionary loaded:', dictionary);
+                return dictionary;
+            })
+            .catch(error => {
+                console.error('Error loading translation dictionary:', error);
+            });
+    }
+    
+    // Initialize the translation and event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('language.js loaded');
+        const langButton = document.getElementById('langButton');
+    
+        // Load the dictionary and apply the initial translation
+        loadDictionary().then(() => {
+            // Set up the language button click event
+            langButton.addEventListener('click', handleLanguageChange);
+    
+            // Initial translation and direction setup
+            translatePage(dictionary, currentLang);
+            updateDirection(currentLang);
+            langButton.textContent = (currentLang === 'en') ? 'عربي' : 'English';
+
+        });
+    });
+    
+    // Template download button logic
+    document.getElementById('downloadTemplateButton').addEventListener('click', () => {
+        const lang = localStorage.getItem('lang') || 'en';  // Get the language from local storage
+        const downloadUrl = `/template_download?lang=${lang}`;  // Add the language as a query parameter
+        window.location.href = downloadUrl;  // Trigger the download
+    });
+
+    document.getElementById('downloadButton').addEventListener('click', () => {
+        const lang = localStorage.getItem('lang') || 'en';  // Get the language from local storage
+        const downloadUrl = `/download?lang=${lang}`;  // Add the language as a query parameter
+        window.location.href = downloadUrl;  // Trigger the download
+    });
+
+    
+    </script>
+    
+    
     
     
 </body>
 </html>
+

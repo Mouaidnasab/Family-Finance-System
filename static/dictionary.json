@@ -293,10 +293,17 @@
         "تحميل": "Upload",
         "الخصم لكل فصل": "Discount given per quarter",
         "تحديد الكل": "Check All",
-        "الغاء التحديد على الكل": "Uncheck All"
+        "الغاء التحديد على الكل": "Uncheck All",
+        "None":""
       },
       
     "ar": {
+      "None":"",
+      "Choose File": "اختر ملف",
+      "no file selected": "لم يتم تحديد ملف",
+      "Choose Rows to Add": "اختر عدد الصفوف لاضافتها",
+      "Manual Upload": "تحميل يدوي",
+      "Upload Excel": "تحميل ملف Excel",
       "Check All": "تحديد الكل",
       "Uncheck All": "الغاء التحديد على الكل",
       "Discount given per quarter": "الخصم لكل فصل",

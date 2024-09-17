@@ -4,9 +4,9 @@
     --secondary-bg-color: white;
     --highlight-bg-color: #3e8e41;
     --dropdown-bg-color: #F5F0F6;
-    --dropdown-color: #eee2f1;
+    --dropdown-color: #ffffff;
     --modal-bg-color: rgba(0, 0, 0, 0.4);
-    --modal-content-bg-color: #F5F0F6;
+    --modal-content-bg-color: #ffffff;
     --border-color: #3F88C5;
     --shadow-color: rgba(0, 0, 0, 0.2);
     --header-bg-color: #cad8e2;
@@ -330,7 +330,6 @@ table td[contenteditable]:focus {
     align-items: center;
     gap: 20px;
     width: 100%;
-    padding-top: 20%;
     margin-bottom: 50px;
 }
 

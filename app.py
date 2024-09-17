@@ -12,6 +12,10 @@ from details_model.loading_model import find_most_similar
 import numpy as np
 import config
 from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row,check_for_new_logs
+import json
+import pandas as pd
+import re
+
 
 import jwt
 import time
@@ -49,6 +53,71 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 
+with open(os.path.join('static', 'dictionary.json'), 'r', encoding='utf-8') as f:
+    translation_dict = json.load(f)
+
+
+
+
+def translate_value(value, target_lang):
+    if not value or value in ["None", "NaN", "nan"]:  # Skip if the value is None or an empty string
+        return value
+
+    if target_lang == 'en':
+        # Translate Arabic to English
+        return translation_dict.get('en', {}).get(value, value)  # Use the original value if no translation is found
+    elif target_lang == 'ar':
+        # Translate English to Arabic
+        # Reverse the dictionary for translation
+        reverse_dict = {v: k for k, v in translation_dict.get('en', {}).items()}
+        return reverse_dict.get(value, value)  # Use the original value if no translation is found
+    else:
+        return value  # No translation needed
+
+
+
+def translate_dataframe(df, target_lang):
+    columns_to_translate = ['segment', 'type', 'sub_type', 'category', 'sub_category',
+                            'currency', 'country_withdraw', 'country_used', 'payeer',
+                            'paid_to', 'account_name']
+
+    for col in columns_to_translate:
+        if col in df.columns:
+            translated_col = df[col].apply(lambda x: translate_value(x, target_lang))
+
+            # Instead of raising an error, log the missing translations but accept None or NaN
+            missing = df[col][translated_col.isnull() & df[col].notnull()].unique()  # Find only non-null values that failed to translate
+            if len(missing) > 0:
+                print(f"Warning: Missing translations for values: {missing}")
+
+            # Update the DataFrame with translated values
+            df[col] = translated_col
+
+    return df
+
+
+
+
+def detect_arabic(text):
+    arabic_pattern = re.compile(r'[\u0600-\u06FF]')
+    return bool(arabic_pattern.search(text))
+
+def is_excel_in_arabic(df, columns_to_check):
+    """
+    Detect if the majority of the values in the given columns of the DataFrame contain Arabic characters.
+    """
+    arabic_count = 0
+    total_count = 0
+
+    for col in columns_to_check:
+        if col in df.columns:
+            for value in df[col].dropna():  # Skip NaN values
+                if isinstance(value, str) and detect_arabic(value):
+                    arabic_count += 1
+                total_count += 1
+
+    # If more than 50% of the values contain Arabic, consider the file as Arabic
+    return arabic_count / total_count > 0.5 if total_count > 0 else False
 
 
 
@@ -148,6 +217,8 @@ def logout():
 def dashboard():
     return render_template('Dashboard.html')
 
+# app.py
+
 @app.route('/transactions', methods=['GET', 'POST'])
 @login_required
 def transactions():
@@ -155,8 +226,8 @@ def transactions():
     username = current_user.username  # Assuming `current_user` is from Flask-Login
     table_name = f"Transactions_Temp_{username}"
     trigger_name = f"log_transaction_changes_{username}"  # Unique trigger name for each user table
+    trigger_name_insert = f"log_transaction_insert_{username}"
 
-    print(table_name)
 
     try:
         # Establish the connection to the database
@@ -167,8 +238,8 @@ def transactions():
         create_table_query = f'''
         CREATE TABLE IF NOT EXISTS {table_name} (
             transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            checkbox int NOT NULL DEFAULT '0',
-            ready int NOT NULL DEFAULT '0',
+            checkbox INT NOT NULL DEFAULT '0',
+            ready INT NOT NULL DEFAULT '0',
             incorrect_columns VARCHAR(255),
             source TEXT,
             date DATE DEFAULT NULL,
@@ -215,6 +286,27 @@ def transactions():
             cursor.execute(create_trigger_query)
             conn.commit()
 
+        check_trigger_query = f'''
+        SELECT COUNT(*)
+        FROM information_schema.TRIGGERS
+        WHERE TRIGGER_NAME = '{trigger_name_insert}' AND TRIGGER_SCHEMA = DATABASE();
+        '''
+        cursor.execute(check_trigger_query)
+        trigger_exists_insert = cursor.fetchone()[0]
+
+        if not trigger_exists_insert:
+            create_trigger_query = f'''
+            CREATE TRIGGER {trigger_name_insert}
+            AFTER INSERT ON {table_name}
+            FOR EACH ROW
+            BEGIN
+                INSERT INTO Transaction_Temp_Logs (username, transaction_id) 
+                VALUES ('{username}', NEW.transaction_id);
+            END;
+            '''
+            cursor.execute(create_trigger_query)
+            conn.commit()
+
         if request.method == 'POST':
             if 'file' not in request.files:
                 flash('No file part', 'error')
@@ -227,26 +319,57 @@ def transactions():
 
             if file:
                 try:
-                    csv_reader = csv.reader(TextIOWrapper(file.stream, encoding='utf-8'))
-                    headers = next(csv_reader)  # Skip the header row
+                    # Read the first sheet of the Excel file
+                    df = pd.read_excel(file, sheet_name=0, dtype=str)
 
-                    # Insert query specific to the user's table
+                    # Ensure all necessary columns are present
+                    expected_columns = ['date', 'segment', 'type', 'sub_type', 'category', 'sub_category',
+                                        'details', 'notes', 'sub_notes', 'transaction_description',
+                                        'country_withdraw', 'country_used', 'account_name', 'currency',
+                                        'payeer', 'paid_to', 'amount']
+                    for col in expected_columns:
+                        if col not in df.columns:
+                            flash(f'Missing column: {col}', 'error')
+                            return redirect(request.url)
+
+                    # Detect if the Excel file is in Arabic
+                    columns_to_check = ['segment', 'type', 'category', 'currency', 'country_withdraw', 'country_used']
+                    if is_excel_in_arabic(df, columns_to_check):
+                        df = translate_dataframe(df, 'en')  # Translate to English before uploading
+
+                    # Prepare the insert query
                     insert_query = f'''
-                        INSERT INTO {table_name} (date, segment, type, sub_type, category, sub_category, details, notes, sub_notes, transaction_description, country_withdraw, country_used, account_name, currency, payeer, paid_to, amount, source)
+                        INSERT INTO {table_name} (date, segment, type, sub_type, category, sub_category, details, 
+                        notes, sub_notes, transaction_description, country_withdraw, country_used, account_name, 
+                        currency, payeer, paid_to, amount, source)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     '''
-                    
-                    for row in csv_reader:
-                        row = [col if col else None for col in row]
-                        row += ['By uploading from website']  # Add the source column value
+
+                    # Iterate over the DataFrame and insert rows
+                    for _, row in df.iterrows():
+                        # Replace NaN with None
+                        row = row.where(pd.notnull(row), None)
+                        # Append the source
+                        row = row.tolist() + ['By uploading from website']
                         cursor.execute(insert_query, row)
 
                     conn.commit()
+
+
+
+
                     flash('File uploaded and processed successfully!', 'message')
 
                     # Emit WebSocket event to notify other clients
                     socketio.emit('data_updated', {'room': table_name}, room=table_name)
 
+                    return render_template('Transactions.html')
+
+
+
+                except ValueError as ve:
+                    conn.rollback()
+                    flash(f'Error processing file: {str(ve)}', 'error')
                 except Exception as e:
                     conn.rollback()
                     flash(f'Error processing file: {str(e)}', 'error')
@@ -259,11 +382,18 @@ def transactions():
     except Exception as e:
         flash(f'Error occurred: {str(e)}', 'error')
     finally:
-        cursor.close()
-        conn.close()
+        try:
+            cursor.close()
+        except:
+            pass
+        try:
+            conn.close()
+        except:
+            pass
 
-    # Render the template without passing any rows
     return render_template('Transactions.html')
+
+
 
 
 @app.route('/get_transactions_data', methods=['GET'])
@@ -301,19 +431,25 @@ def reports():
     return render_template('Reports.html')
 
 
+# app.py
+
 @app.route('/download')
 @login_required
 def download_file():
     # Get the current user's username
     username = current_user.username  # Assuming `current_user` is defined via Flask-Login
     table_name = f"Transactions_Temp_{username}"
+    lang = request.args.get('lang', 'en')  # Get the language parameter, default to 'en'
+    
+    if lang not in ['en', 'ar']:
+        lang = 'en'  # Default to English if invalid language is provided
 
     try:
         conn = mysql.connector.connect(**config.db_config)
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)  # Use dictionary cursor for easier handling
 
         # Fetch data from the user-specific table
-        query = f'SELECT * FROM {table_name}'
+        query = f'SELECT * FROM {table_name} ORDER BY date DESC'
         print(f"Executing query: {query}")  # Debugging: Print the query to check if it is correct
         cursor.execute(query)
         rows = cursor.fetchall()
@@ -332,16 +468,38 @@ def download_file():
         cursor.close()
         conn.close()
 
-    # Write the data to CSV format
-    output = StringIO()
-    csv_writer = csv.writer(output)
-    csv_writer.writerow(columns)  # Write the headers (column names)
-    csv_writer.writerows(rows)    # Write the data rows
+    # Convert the rows to a DataFrame
+    df = pd.DataFrame(rows)
+
+    # Define the columns you want to download
+    to_download = ['date','segment', 'type', 'sub_type', 'category', 'sub_category','details', 'notes', 'sub_notes', 'transaction_description', 'account_name',
+                   'currency', 'country_withdraw', 'country_used', 'payeer',
+                   'paid_to', 'amount']
+
+    # Ensure you only keep the columns you want
+    df = df[to_download]
+
+    # Translate data if language is Arabic
+    if lang == 'ar':
+        try:
+            df = translate_dataframe(df, 'ar')  # Translate to Arabic before downloading
+        except ValueError as ve:
+            flash(f'Error translating data: {str(ve)}', 'error')
+            return redirect(url_for('transactions'))
+        except Exception as e:
+            flash(f'Error translating data: {str(e)}', 'error')
+            return redirect(url_for('transactions'))
+
+    # Write the data to an Excel file
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
     output.seek(0)
 
-    # Convert the output to bytes and send as a file download
-    byte_output = BytesIO(output.getvalue().encode('utf-8'))
-    return send_file(byte_output, download_name=f'{table_name}.csv', as_attachment=True, mimetype='text/csv')
+    # Determine the download filename
+    download_filename = f'{table_name}.xlsx'
+
+    return send_file(output, download_name=download_filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/template_download', methods=['GET'])
 @login_required
@@ -349,14 +507,44 @@ def template_download():
     try:
         lang = request.args.get('lang', 'en')  # Get selected language from the frontend
         if lang == 'ar':
-            template_path = 'static/Transactions_Templete_ar.xlsx'
+            template_path = 'static/Transactions_Template_ar.xlsx'
         else:
-            template_path = 'static/Transactions_Templete_en.xlsx'
+            template_path = 'static/Transactions_Template_en.xlsx'
         return send_file(template_path, as_attachment=True)
     except Exception as e:
         flash(f'Error downloading template: {str(e)}', 'error')
         return redirect(url_for('transactions'))
     
+
+@app.route('/get_column_headers', methods=['GET'])
+@login_required
+def get_column_headers():
+    try:
+        # Get the current user's username
+        username = current_user.username  # Assuming `current_user` is provided by Flask-Login
+        table_name = f"Transactions_Temp_{username}"  # Table name for the current user
+
+        # Connect to the database
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor()
+
+        # Query the column headers for the user-specific table
+        cursor.execute(f'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = %s', (table_name,))
+        column_headers = [row[0] for row in cursor.fetchall()]
+
+        if not column_headers:
+            return jsonify({'status': 'error', 'message': 'No column headers found for the specified table.'}), 404
+
+        return jsonify({'status': 'success', 'data': column_headers})
+
+    except Exception as e:
+        # Handle any errors that occur
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # Route to get row count dynamically from user-specific table
 @app.route('/get_row_count', methods=['GET'])
@@ -401,7 +589,6 @@ def update_transaction():
     # Get the current user's username
     username = current_user.username  # Assuming Flask-Login provides current_user
     table_name = f"Transactions_Temp_{username}"
-    print(f"Table name: {table_name}")
 
     # Parse the JSON data from the request
     data = request.get_json()
@@ -432,7 +619,6 @@ def update_transaction():
 
     except Exception as e:
         # Handle and log errors
-        print(f"Error updating transaction: {str(e)}")  # Debugging: print the error message
         return jsonify(success=False, error=str(e))
 
     finally:
@@ -550,7 +736,6 @@ def call_procedure_update_transactions_temp():
                 if similar_row.get('sub_type') == 'Direct':
                     direct_check = 1
                 for key, value in similar_row.items():
-                    print(key, value)  # Debugging: Print the key-value pair being processed
                     if direct_check == 1 and key in transaction and key != "Combined" and key != "country_used" and not transaction[key]:  
                         # Check if the type is 'Direct' and the cell is empty
                         if isinstance(value, float) and np.isnan(value):  # Check if the value is NaN
