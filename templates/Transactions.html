@@ -173,9 +173,7 @@
                 <span class="row-label">Row Count</span>
                 <span class="row-number">{{ rows|length }}</span>
             </div>
-            <form action="{{ url_for('finalize_transactions') }}" method="get"></form>
-                <button class="button" type="submit">Submit</button>
-            </form>
+                <a href="{{ url_for('finalize_transactions') }}"  method="get"><button class="button" type="submit">Submit</button></a>
         </div>
     </div>
     
@@ -195,30 +193,6 @@
         </div>
     </div>
 
-    <div id="newDetailsPopup" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeNewDetailsPopup()">&times;</span>
-            <div id="newDetailsContent"></div>
-            <div id="navigationButtons">
-                <button onclick="prevDetail()">Back</button>
-                <button onclick="nextDetail()">Next</button>
-            </div>
-            <button id="confirmButton" onclick="showConfirmPopup()">Confirm</button>
-        </div>
-    </div>
-
-    <div id="confirmationModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeConfirmationModal()">&times;</span>
-            <h3>Confirm Submission</h3>
-            <p>Are you sure you want to submit the following descriptions?</p>
-            <ul id="confirmDescriptions"></ul>
-            <div>
-                <button onclick="cancelSubmission()">Cancel</button>
-                <button onclick="confirmSubmission()">Confirm</button>
-            </div>
-        </div>
-    </div>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>

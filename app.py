@@ -343,15 +343,56 @@ def download_file():
     byte_output = BytesIO(output.getvalue().encode('utf-8'))
     return send_file(byte_output, download_name=f'{table_name}.csv', as_attachment=True, mimetype='text/csv')
 
-@app.route('/template_download')
+@app.route('/template_download', methods=['GET'])
 @login_required
 def template_download():
     try:
-        template_path = 'static/Transactions_Templete.xlsx'
+        lang = request.args.get('lang', 'en')  # Get selected language from the frontend
+        if lang == 'ar':
+            template_path = 'static/Transactions_Templete_ar.xlsx'
+        else:
+            template_path = 'static/Transactions_Templete_en.xlsx'
         return send_file(template_path, as_attachment=True)
     except Exception as e:
         flash(f'Error downloading template: {str(e)}', 'error')
         return redirect(url_for('transactions'))
+    
+
+# Route to get row count dynamically from user-specific table
+@app.route('/get_row_count', methods=['GET'])
+@login_required
+def get_row_count():
+    try:
+        # Construct the user-specific table name based on the logged-in user's username
+        username = current_user.username  # Get the current user's username
+        table_name = f"Transactions_Temp_{username}"  # Table name for the current user
+
+        # Establish a database connection
+        connection = mysql.connector.connect(**config.db_config)
+        cursor = connection.cursor()
+
+        # Prepare and execute the SQL query to count rows
+        query = f"SELECT COUNT(*) FROM `{table_name}`"
+        cursor.execute(query)
+        
+        # Fetch the row count result
+        row_count = cursor.fetchone()[0]
+
+        # Return the result as JSON
+        return jsonify({'row_count': row_count})
+
+    except mysql.connector.Error as err:
+        return jsonify({'error': f"Database error: {str(err)}"}), 500
+
+    except Exception as e:
+        return jsonify({'error': f"Error: {str(e)}"}), 500
+
+    finally:
+        # Close the cursor and connection
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 # Update `/update_transaction` to emit WebSocket events upon successful updates
 @app.route('/update_transaction', methods=['POST'])
@@ -647,6 +688,7 @@ def add_rows():
 @app.route('/finalize')
 @login_required
 def finalize_transactions():
+    print("Finalizing transactions...")
     # Get the current user's username
     username = current_user.username  # Assuming Flask-Login is providing current_user
     table_name = f"Transactions_Temp_{username}"  # Create user-specific table name

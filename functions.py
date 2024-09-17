@@ -222,7 +222,6 @@ def process_transaction_change(transaction_id, username):
     conn.close()
 
 
-
 def check_for_new_logs():
     # Connect to the database using the global config
     conn = mysql.connector.connect(**config.db_config)
@@ -235,15 +234,10 @@ def check_for_new_logs():
     """)
     logs = cursor.fetchall()
 
-    loga =[]
     for log in logs:
         log_id, username, transaction_id = log
         process_transaction_change(transaction_id, username)
-        loga.append(log_id)
-
-    for log_id in loga:
         cursor.execute("DELETE FROM Transaction_Temp_Logs WHERE log_id = %s", (log_id,))
-    loga.clear
         
     conn.commit()
     cursor.close()
