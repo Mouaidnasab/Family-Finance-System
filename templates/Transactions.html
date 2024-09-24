@@ -347,11 +347,7 @@
             function initializeHandsontable(data, translatedDropdownData) {
                 console.log('Initializing Handsontable with data:', data);
 
-                data.forEach(function (row) {
-                    if (row.ready === 0) {
-                        row.checkbox = 0;  // Uncheck the checkbox if ready is 0
-                    }
-                });
+
 
                 const container = document.getElementById('hot');
                 const headers = getColumnHeadersByLanguage(currentLang); // Use static headers based on the selected language
@@ -435,11 +431,6 @@
                             cellProperties.className = 'lightgreenRow';
                         }
 
-                        // Uncheck and disable checkbox if ready is 0
-                        if (col === 0 && rowData.ready === 0) {
-                            // Make the checkbox uneditable
-                            cellProperties.readOnly = true;
-                        }
 
                         // Enable checkbox if ready is 1
                         if (col === 0 && rowData.ready === 1) {

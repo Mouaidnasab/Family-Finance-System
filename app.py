@@ -801,7 +801,7 @@ def check_all():
         cursor = conn.cursor()
         
         # Update all rows to set checkbox = 1 (checked)
-        cursor.execute(f'UPDATE {table_name} SET checkbox = 1')
+        cursor.execute(f'UPDATE {table_name} SET checkbox = 1 where ready = 1')
         conn.commit()
         
         return jsonify({'status': 'success', 'message': 'All transactions checked.'})
