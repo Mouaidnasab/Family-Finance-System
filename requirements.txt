@@ -21,4 +21,3 @@ six==1.16.0
 PyJWT
 flask-bcrypt
 flask_socketio
-re
