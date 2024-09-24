@@ -11,7 +11,7 @@ import json
 from details_model.loading_model import find_most_similar
 import numpy as np
 import config
-from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row,check_for_new_logs
+from functions import populate_unique_values, fetch_dropdown_data, validate_transaction_row,check_for_new_logs_optimized
 import json
 import pandas as pd
 import re
@@ -219,15 +219,105 @@ def dashboard():
 
 # app.py
 
+@app.route('/upload', methods=['POST'])
+@login_required
+def upload_file():
+    # Get the current user's username
+    username = current_user.username
+    table_name = f"Transactions_Temp_{username}"
+
+    try:
+        # Establish the connection to the database
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor()
+
+        if 'file' not in request.files:
+            flash('No file part', 'error')
+            return redirect(request.url)
+
+        file = request.files['file']
+        if file.filename == '':
+            flash('No selected file', 'error')
+            return redirect(request.url)
+
+        if file:
+            try:
+                # Read the first sheet of the Excel file
+                df = pd.read_excel(file, sheet_name=0, dtype=str)
+
+                # Ensure all necessary columns are present
+                expected_columns = ['date', 'segment', 'type', 'sub_type', 'category', 'sub_category',
+                                    'details', 'notes', 'sub_notes', 'transaction_description',
+                                    'country_withdraw', 'country_used', 'account_name', 'currency',
+                                    'payeer', 'paid_to', 'amount']
+                for col in expected_columns:
+                    if col not in df.columns:
+                        flash(f'Missing column: {col}', 'error')
+                        return redirect(request.url)
+
+                # Detect if the Excel file is in Arabic and translate
+                columns_to_check = ['segment', 'type', 'category', 'currency', 'country_withdraw', 'country_used']
+                if is_excel_in_arabic(df, columns_to_check):
+                    df = translate_dataframe(df, 'en')
+
+                # Prepare the insert query
+                insert_query = f'''
+                    INSERT INTO {table_name} (date, segment, type, sub_type, category, sub_category, details, 
+                    notes, sub_notes, transaction_description, country_withdraw, country_used, account_name, 
+                    currency, payeer, paid_to, amount, source)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                '''
+
+                # Iterate over the DataFrame and insert rows
+                for _, row in df.iterrows():
+                    row = row.where(pd.notnull(row), None)
+                    row = row.tolist() + ['By uploading from website']
+                    cursor.execute(insert_query, row)
+
+                conn.commit()
+
+                check_for_new_logs_optimized()
+
+                flash('File uploaded and processed successfully!', 'message')
+
+                # Emit WebSocket event to notify other clients
+                socketio.emit('data_updated', {'room': table_name}, room=table_name)
+
+                return redirect(url_for('transactions'))
+
+            except ValueError as ve:
+                conn.rollback()
+                flash(f'Error processing file: {str(ve)}', 'error')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error processing file: {str(e)}', 'error')
+            finally:
+                cursor.close()
+                conn.close()
+
+    except Exception as e:
+        flash(f'Error occurred: {str(e)}', 'error')
+    finally:
+        try:
+            cursor.close()
+        except:
+            pass
+        try:
+            conn.close()
+        except:
+            pass
+
+    return redirect(url_for('transactions'))
+
+
 @app.route('/transactions', methods=['GET', 'POST'])
 @login_required
 def transactions():
     # Get the current user's username
-    username = current_user.username  # Assuming `current_user` is from Flask-Login
+    username = current_user.username
     table_name = f"Transactions_Temp_{username}"
     trigger_name = f"log_transaction_changes_{username}"  # Unique trigger name for each user table
     trigger_name_insert = f"log_transaction_insert_{username}"
-
 
     try:
         # Establish the connection to the database
@@ -264,7 +354,7 @@ def transactions():
         cursor.execute(create_table_query)
         conn.commit()
 
-        # Create a trigger if it does not already exist
+        # Create a trigger if it does not already exist for updates
         check_trigger_query = f'''
         SELECT COUNT(*)
         FROM information_schema.TRIGGERS
@@ -275,17 +365,24 @@ def transactions():
 
         if not trigger_exists:
             create_trigger_query = f'''
-            CREATE TRIGGER {trigger_name}
-            AFTER UPDATE ON {table_name}
-            FOR EACH ROW
-            BEGIN
-                INSERT INTO Transaction_Temp_Logs (username, transaction_id) 
-                VALUES ('{username}', NEW.transaction_id);
-            END;
+CREATE TRIGGER {trigger_name}
+AFTER UPDATE ON {table_name}
+FOR EACH ROW
+BEGIN
+    -- Insert a log if both 'incorrect_columns' and 'ready' haven't changed
+    IF NEW.incorrect_columns = OLD.incorrect_columns AND NEW.ready = OLD.ready THEN
+        -- Insert a log
+        INSERT INTO Transaction_Temp_Logs (username, transaction_id)
+        VALUES ('{username}', NEW.transaction_id);
+    END IF;
+END;
+
+
             '''
             cursor.execute(create_trigger_query)
             conn.commit()
 
+        # Create a trigger for inserts
         check_trigger_query = f'''
         SELECT COUNT(*)
         FROM information_schema.TRIGGERS
@@ -307,77 +404,8 @@ def transactions():
             cursor.execute(create_trigger_query)
             conn.commit()
 
-        if request.method == 'POST':
-            if 'file' not in request.files:
-                flash('No file part', 'error')
-                return redirect(request.url)
-
-            file = request.files['file']
-            if file.filename == '':
-                flash('No selected file', 'error')
-                return redirect(request.url)
-
-            if file:
-                try:
-                    # Read the first sheet of the Excel file
-                    df = pd.read_excel(file, sheet_name=0, dtype=str)
-
-                    # Ensure all necessary columns are present
-                    expected_columns = ['date', 'segment', 'type', 'sub_type', 'category', 'sub_category',
-                                        'details', 'notes', 'sub_notes', 'transaction_description',
-                                        'country_withdraw', 'country_used', 'account_name', 'currency',
-                                        'payeer', 'paid_to', 'amount']
-                    for col in expected_columns:
-                        if col not in df.columns:
-                            flash(f'Missing column: {col}', 'error')
-                            return redirect(request.url)
-
-                    # Detect if the Excel file is in Arabic
-                    columns_to_check = ['segment', 'type', 'category', 'currency', 'country_withdraw', 'country_used']
-                    if is_excel_in_arabic(df, columns_to_check):
-                        df = translate_dataframe(df, 'en')  # Translate to English before uploading
-
-                    # Prepare the insert query
-                    insert_query = f'''
-                        INSERT INTO {table_name} (date, segment, type, sub_type, category, sub_category, details, 
-                        notes, sub_notes, transaction_description, country_withdraw, country_used, account_name, 
-                        currency, payeer, paid_to, amount, source)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    '''
-
-                    # Iterate over the DataFrame and insert rows
-                    for _, row in df.iterrows():
-                        # Replace NaN with None
-                        row = row.where(pd.notnull(row), None)
-                        # Append the source
-                        row = row.tolist() + ['By uploading from website']
-                        cursor.execute(insert_query, row)
-
-                    conn.commit()
-
-
-
-
-                    flash('File uploaded and processed successfully!', 'message')
-
-                    # Emit WebSocket event to notify other clients
-                    socketio.emit('data_updated', {'room': table_name}, room=table_name)
-
-                    return render_template('Transactions.html')
-
-
-
-                except ValueError as ve:
-                    conn.rollback()
-                    flash(f'Error processing file: {str(ve)}', 'error')
-                except Exception as e:
-                    conn.rollback()
-                    flash(f'Error processing file: {str(e)}', 'error')
-                finally:
-                    cursor.close()
-                    conn.close()
-
-                return redirect(url_for('transactions'))
+        # Handle any other logic you might want for transactions (like rendering the page)
+        return render_template('Transactions.html')
 
     except Exception as e:
         flash(f'Error occurred: {str(e)}', 'error')
@@ -392,6 +420,8 @@ def transactions():
             pass
 
     return render_template('Transactions.html')
+
+
 
 
 
@@ -610,7 +640,7 @@ def update_transaction():
 
         # Commit changes to the database
         connection.commit()
-        check_for_new_logs()    
+        check_for_new_logs_optimized()    
         # Emit WebSocket event to notify other clients about the update
         socketio.emit('data_updated', {'room': table_name}, room=table_name)
 

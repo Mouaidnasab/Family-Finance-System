@@ -1,6 +1,7 @@
 import mysql.connector
 import config
 from datetime import datetime,date
+import time
 
 
 def populate_unique_values():
@@ -187,61 +188,86 @@ def validate_transaction_row(row, dropdown_data):
     
     # Return the list of incorrect columns and the ready flag
     return incorrect_columns, ready
-def process_transaction_change(transaction_id, username):
-    # Connect to the database using user-specific configuration
+def process_transaction_changes_in_batch(logs, dropdown_data):
+    # Connect to the database
     conn = mysql.connector.connect(**config.db_config)
-    dropdown_data = fetch_dropdown_data(conn)
-
-    
     cursor = conn.cursor(dictionary=True)
 
-    # Pull the changed row from the user-specific table Transactions_Temp_{username}
-    table_name = f"Transactions_Temp_{username}"
-    cursor.execute(f"SELECT * FROM {table_name} WHERE transaction_id = %s", (transaction_id,))
-    transaction_row = cursor.fetchone()
+    log_ids_to_delete = []
 
-    if transaction_row:
-        # Run validation
-        incorrect_columns, ready = validate_transaction_row(transaction_row, dropdown_data)
+    for log in logs:
+        log_id, username, transaction_id = log
 
-        # Convert the list of incorrect columns to a comma-separated string
-        incorrect_columns_str = ', '.join(incorrect_columns)
+        # Pull the changed row from the user-specific table Transactions_Temp_{username}
+        table_name = f"Transactions_Temp_{username}"
+        cursor.execute(f"SELECT * FROM {table_name} WHERE transaction_id = %s", (transaction_id,))
+        transaction_row = cursor.fetchone()
 
-        # Check if 'incorrect_columns' or 'ready' fields have actually changed
-        if incorrect_columns_str != transaction_row['incorrect_columns'] or ready != transaction_row['ready']:
-            # Only update the table if necessary to prevent unnecessary trigger activation
-            cursor.execute(f"""
-                UPDATE {table_name}
-                SET incorrect_columns = %s, ready = %s
-                WHERE transaction_id = %s
-            """, (incorrect_columns_str, ready, transaction_id))
+        if transaction_row:
+            # Run validation
+            incorrect_columns, ready = validate_transaction_row(transaction_row, dropdown_data)
 
+            # Convert the list of incorrect columns to a comma-separated string
+            incorrect_columns_str = ', '.join(incorrect_columns)
+
+            # Check if 'incorrect_columns' or 'ready' fields have actually changed
+            if incorrect_columns_str != transaction_row['incorrect_columns'] or ready != transaction_row['ready']:
+                # Only update the table if necessary to prevent unnecessary trigger activation
+                cursor.execute(f"""
+                    UPDATE {table_name}
+                    SET incorrect_columns = %s, ready = %s
+                    WHERE transaction_id = %s
+                """, (incorrect_columns_str, ready, transaction_id))
+
+            # Track processed log for deletion
+            log_ids_to_delete.append(log_id)
+
+    # Commit all updates
+    conn.commit()
+
+    # Remove processed logs in bulk
+    if log_ids_to_delete:
+        delete_logs_in_bulk(cursor, log_ids_to_delete)
         conn.commit()
-    
+
     cursor.close()
     conn.close()
 
 
-def check_for_new_logs():
+def delete_logs_in_bulk(cursor, log_ids):
+    # Perform a bulk delete for processed logs
+    format_strings = ','.join(['%s'] * len(log_ids))
+    cursor.execute(f"DELETE FROM Transaction_Temp_Logs WHERE log_id IN ({format_strings})", log_ids)
+    
+
+
+def check_for_new_logs_optimized():
+    print("Checking for new logs...")
     # Connect to the database using the global config
     conn = mysql.connector.connect(**config.db_config)
     
     cursor = conn.cursor()
 
-    # Fetch logs that haven't been processed yet
-    cursor.execute("""
-        SELECT log_id, username, transaction_id FROM Transaction_Temp_Logs
-    """)
+    # Fetch logs that haven't been processed yet in a batch
+    cursor.execute("SELECT log_id, username, transaction_id FROM Transaction_Temp_Logs")
     logs = cursor.fetchall()
 
-    for log in logs:
-        log_id, username, transaction_id = log
-        process_transaction_change(transaction_id, username)
-        cursor.execute("DELETE FROM Transaction_Temp_Logs WHERE log_id = %s", (log_id,))
-        
-    conn.commit()
+    # Fetch dropdown data once for the batch
+    dropdown_data = fetch_dropdown_data(conn)
+
+    # Process all logs in batch
+    if logs:
+        process_transaction_changes_in_batch(logs, dropdown_data)
+
     cursor.close()
     conn.close()
+
+
+
+check_for_new_logs_optimized()
+
+
+
 
 
 # # Test case setup

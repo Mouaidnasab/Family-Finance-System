@@ -53,8 +53,13 @@
             background-color: rgb(253, 153, 153) !important;
         }
 
-                /* Toastr position adjustments */
-                #toast-container > div {
+        .lightRedRow {
+            background-color: rgb(255, 214, 214)  !important; /* Or any other shade of light red */
+        }
+        
+
+        /* Toastr position adjustments */
+        #toast-container > div {
             opacity: 1;
         }
 
@@ -111,7 +116,7 @@
     <div class="sub-navbar">
         <button onclick="callUpdateTransactionsTemp()" data-translate="Autofill">Autofill</button>
 
-        <button id="downloadButton" class="download-btn">Download</button>
+        <button id="downloadButton" class="download-btn"  data-translate="Download">Download</button>
         <button id="uploadBtn" data-translate="Upload">Upload</button>
     </div>
     <div class="fixed-table-container border">
@@ -140,7 +145,7 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <div class="upload-section">
-                <form method="POST" enctype="multipart/form-data" style="display: flex; justify-content: space-between; width: 100%;" action="{{ url_for('transactions') }}">
+                <form action="/upload" method="POST" enctype="multipart/form-data" style="display: flex; justify-content: space-between; width: 100%;" >
                     <input class="file-input" type="file" name="file" accept=".xlsx" data-translate-placeholder="Choose File">
                     <input class="upload-btn" type="submit" value="Upload Excel" data-translate-value="Upload Excel">
 
@@ -412,9 +417,18 @@
                         let cellProperties = {};
                         const rowData = this.instance.getSourceDataAtRow(row);
 
-                        // Highlight the cells with errors in red
+                        
+                        // Check if the current cell has errors and should be highlighted red
                         if (rowData.incorrect_columns && rowData.incorrect_columns.includes(this.instance.colToProp(col))) {
                             cellProperties.className = 'redRow';
+                        }
+
+                        // Now check if any cell in this row has the 'redRow' class
+                        var rowHasRedCell = rowData.incorrect_columns && rowData.incorrect_columns.length > 0;
+
+                        // If any cell in this row is red, apply light red color to all cells in the row
+                        if (rowHasRedCell && !cellProperties.className) {
+                            cellProperties.className = 'lightRedRow';
                         }
 
                         if (rowData.ready === 1) {
