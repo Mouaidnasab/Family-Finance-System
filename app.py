@@ -1181,11 +1181,10 @@ def filter_transactions():
 
 
 
-@app.route('/download_filtered', methods=['POST'])
+@app.route('/download_filtered', methods=['GET'])
 @login_required
 def download_filtered():
-    filters = request.form.get('filters')
-    filters = json.loads(filters)
+    filters = request.args
 
     query = '''
         SELECT 

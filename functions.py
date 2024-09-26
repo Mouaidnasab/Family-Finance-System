@@ -264,7 +264,6 @@ def check_for_new_logs_optimized():
 
 
 
-check_for_new_logs_optimized()
 
 
 

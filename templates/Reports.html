@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://handsontable.com/docs/11.1.0/components/handsontable/dist/handsontable.full.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script type="text/javascript" src="/static/js/language.js"> </script>
     <link rel="stylesheet" href="/static/css/sidebar_styles.css">
 
 
@@ -20,12 +19,14 @@
 
 
         <div class="sidebar main" id="mainLayer">
-            <a href="{{ url_for('dashboard') }}"><button class="layer-btn" >Dashboard</button></a>
-            <a href="{{ url_for('transactions') }}"><button class="layer-btn" >Transactions</button></a>
-            <button class="layer-btn" onclick="showLayer('reports')">Reports</button>
+            <button class="layer-btn" id="langButton" data-lang="en">English</button>
+
+            <a href="{{ url_for('dashboard') }}"><button class="layer-btn"   data-translate="Dashboard">Dashboard</button></a>
+            <a href="{{ url_for('transactions') }}"><button class="layer-btn" data-translate="Transactions">Transactions</button></a>
+            <button class="layer-btn" onclick="showLayer('reports')" data-translate="Reports">Reports</button>
     
             <div class="profile-section">
-                <a href="{{ url_for('logout') }}"><button class="profile-btn">Profile</button></a>
+                <a href="{{ url_for('logout') }}"><button class="profile-btn" data-translate="Profile">Profile</button></a>
                 <button class="settings-btn">
                     <!-- Example illustration for settings icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 96 960 960" width="24">
@@ -68,18 +69,34 @@
     <div class="table-container">
         <div id="hot"></div>
     </div>
-    <div class="fixed-button-container">
-        <form id="downloadForm" action="{{ url_for('download_filtered') }}" method="post">
-            <input type="hidden" id="filtersInput" name="filters" />
-            <button type="submit" class="fixed-button submit-button">Download</button>
-        </form>
-        <div id="rowCount" class="fixed-text" style="bottom: 10px; right: 100px;">Row Count: 0</div>
+
+
+
+    <div class="footer">
+        <!-- Left Section for Template, Clear, Check All, Uncheck All -->
+        <div class="footer-left">
+
+        </div>
+    
+        <!-- Right Section for Submit and Row Count -->
+        <div class="footer-right">
+            <div class="row-count">
+                <span class="row-label" data-translate="Row Count">Row Count</span>
+                <span class="row-number" id="rowCount">0</span>
+            </div>
+                <a href="{{ url_for('download_filtered') }}"  method="get"><button class="button" type="submit" data-translate="Submit">Download</button></a>
+        </div>
     </div>
+
+
+
     
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/static/js/sidebar_reports.js"></script>
+    <script type="text/javascript" src="/static/js/language.js"> </script>
+
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -97,88 +114,163 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.status === 'success') {
-                        initializeFilters(result.data);
+                        initializeFilters(result.data,currentLang, dictionary);
                         initializeHandsontable([]);
                     } else {
                         console.error('Error fetching dropdown data:', result.message);
                     }
                 });
 
-            function initializeFilters(data) {
-                const filterRow = document.getElementById('filterRow');
-                const columns = [
-                    { id: 'dateFilter', type: 'date', placeholder: 'YYYY/MM/DD', label: 'Date' },
-                    { id: 'segmentFilter', type: 'select', options: data.segment, label: 'Segment' },
-                    { id: 'typeFilter', type: 'select', options: data.type, label: 'Type' },
-                    { id: 'subTypeFilter', type: 'select', options: data.sub_type, label: 'Sub Type' },
-                    { id: 'categoryFilter', type: 'select', options: data.category, label: 'Category' },
-                    { id: 'subCategoryFilter', type: 'select', options: data.sub_category, label: 'Sub Category' },
-                    { id: 'detailsFilter', type: 'select', options: data.details, label: 'Details' },
-                    { id: 'notesFilter', type: 'select', options: data.notes, label: 'Notes' },
-                    { id: 'subNotesFilter', type: 'select', options: data.sub_notes, label: 'Sub Notes' },
-                    { id: 'transactionDescriptionFilter', type: 'select', options: data.transaction_description, label: 'Transaction Description' },
-                    { id: 'countryFilter', type: 'select', options: data.country, label: 'Country Used' },
-                    { id: 'accountFilter', type: 'select', options: data.account_name, label: 'Account Name' },
-                    { id: 'currencyFilter', type: 'select', options: data.currency, label: 'Currency' },
-                    { id: 'payeerFilter', type: 'select', options: data.account_name, label: 'Payeer' },
-                    { id: 'paidToFilter', type: 'select', options: data.account_name.concat(data.member_name), label: 'Paid To' },
-                    { id: 'amountFilter', type: 'select', options: data.amount, label: 'Amount' }
-                ];
 
-                columns.forEach(col => {
-                    const filterElement = document.createElement('div');
-                    filterElement.className = 'filter-element';
 
-                    const label = document.createElement('label');
-                    label.textContent = col.label;
-                    label.htmlFor = col.id;
-                    filterElement.appendChild(label);
+            const headersEnglish = [
+            'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
+            'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
+            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
+            ];
 
-                    if (col.type === 'select') {
-                        const select = document.createElement('select');
-                        select.id = col.id;
-                        const defaultOption = document.createElement('option');
-                        defaultOption.value = '';
-                        defaultOption.textContent = 'All';
-                        select.appendChild(defaultOption);
-                        col.options.forEach(option => {
-                            const opt = document.createElement('option');
-                            opt.value = option;
-                            opt.textContent = option;
-                            select.appendChild(opt);
-                        });
-                        select.addEventListener('change', fetchFilteredData);
-                        filterElement.appendChild(select);
-                    } else if (col.type === 'date') {
-                        const input = document.createElement('input');
-                        input.id = col.id;
-                        input.type = 'text';  // Change to 'text' to support flatpickr
-                        input.placeholder = col.placeholder || '';
-                        flatpickr(input, {
-                            mode: "range",
-                            dateFormat: "Y/m/d",
-                            onChange: fetchFilteredData
-                        });
-                        filterElement.appendChild(input);
-                    } else {
-                        const input = document.createElement('input');
-                        input.id = col.id;
-                        input.type = 'text';
-                        input.placeholder = col.placeholder || '';
-                        input.addEventListener('input', fetchFilteredData);
-                        filterElement.appendChild(input);
+            const headersArabic = [
+                'التاريخ', 'القطعة', 'النوع', 'النوع الفرعي', 'الفئة', 'الفئة الفرعية', 'التفاصيل', 'ملاحظات', 
+                'ملاحظات فرعية', 'وصف المعاملة', 'بلد السحب', 'البلد المستخدم', 
+                'اسم الحساب', 'العملة', 'المدفوع', 'المدفوع إلى', 'المبلغ'
+            ];
+
+            function getColumnHeadersByLanguage(language) {
+                return language === 'en' ? headersEnglish : headersArabic;
+            }
+
+
+
+
+            
+            // Function to translate data based on current language
+            function translateData(data) {
+                return data.map(row => {
+                    let translatedRow = {...row};
+                    for (let key in translatedRow) {
+                        if (typeof translatedRow[key] === 'string') {
+                            translatedRow[key] = translateText(translatedRow[key], currentLang, dictionary);
+                        }
                     }
-                    filterRow.appendChild(filterElement);
+                    return translatedRow;
                 });
             }
 
+
+             // Function to translate dropdown data
+            function translateDropdownData(dropdownData, currentLang, dictionary) {
+                let translatedDropdownData = {};
+
+                for (let key in dropdownData) {
+                    translatedDropdownData[key] = dropdownData[key].map(item => translateText(item, currentLang, dictionary));
+                }
+
+                return translatedDropdownData;
+            }
+
+            function translateToEnglish(value, field) {
+                console.log("value", value, "field", field)
+                // Assuming dictionary is an object with Arabic-English key-value pairs
+                if (dictionary[field] && dictionary[field][value]) {
+                    console.log("dictionary[field][value]", dictionary[field][value])
+                    return dictionary[field][value];  // Return English translation
+                }
+                return value;  // Return original value if no translation found
+            }
+
+            // Function to translate dropdown values to English before sending to the server
+            function translateDropdownValuesToEnglish(rowData) {
+                const translatedData = {...rowData};  // Create a copy of the rowData
+
+                // Loop through the fields that need translation
+                ['segment', 'type', 'sub_type', 'category', 'sub_category', 'currency', 'country_withdraw', 'country_used', 'payeer', 'paid_to', 'account_name'].forEach(field => {
+                    if (translatedData[field]) {
+                        // Translate the value to English using the dictionary
+                        console.log(translatedData[field], field)
+                        translatedData[field] = translateToEnglish(translatedData[field], field);
+                    }
+                });
+
+                return translatedData;
+            }
+
+           
+
+
+            function initializeFilters(data, currentLang, dictionary) {
+        const filterRow = document.getElementById('filterRow');
+
+        // Translate the dropdown data before using it
+        const translatedData = translateDropdownData(data, currentLang, dictionary);
+
+        const columns = [
+            { id: 'dateFilter', type: 'date', placeholder: 'YYYY/MM/DD', label: 'Date', translationKey: 'date' },
+            { id: 'segmentFilter', type: 'select', options: translatedData.segment, label: 'Segment', translationKey: 'segment' },
+            { id: 'typeFilter', type: 'select', options: translatedData.type, label: 'Type', translationKey: 'type' },
+            { id: 'subTypeFilter', type: 'select', options: translatedData.sub_type, label: 'Sub Type', translationKey: 'subType' },
+            { id: 'categoryFilter', type: 'select', options: translatedData.category, label: 'Category', translationKey: 'category' },
+            { id: 'subCategoryFilter', type: 'select', options: translatedData.sub_category, label: 'Sub Category', translationKey: 'subCategory' },
+            { id: 'countryFilter', type: 'select', options: translatedData.country, label: 'Country Used', translationKey: 'countryUsed' },
+            { id: 'accountFilter', type: 'select', options: translatedData.account_name, label: 'Account Name', translationKey: 'accountName' },
+            { id: 'currencyFilter', type: 'select', options: translatedData.currency, label: 'Currency', translationKey: 'currency' },
+            { id: 'payeerFilter', type: 'select', options: translatedData.account_name, label: 'Payeer', translationKey: 'payeer' },
+            { id: 'paidToFilter', type: 'select', options: translatedData.account_name.concat(translatedData.member_name), label: 'Paid To', translationKey: 'paidTo' },
+        ];
+
+        columns.forEach(col => {
+            const filterElement = document.createElement('div');
+            filterElement.className = 'filter-element';
+
+            const label = document.createElement('label');
+            label.textContent = col.label;
+            label.htmlFor = col.id;
+            label.setAttribute('data-translate', col.translationKey);  // Add the data-translate attribute for translation
+            filterElement.appendChild(label);
+
+        if (col.type === 'select') {
+            const select = document.createElement('select');
+            select.id = col.id;
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'All';
+            select.appendChild(defaultOption);
+            col.options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+            });
+            select.addEventListener('change', fetchFilteredData);
+            filterElement.appendChild(select);
+        } else if (col.type === 'date') {
+            const input = document.createElement('input');
+            input.id = col.id;
+            input.type = 'text';  // Change to 'text' to support flatpickr
+            input.placeholder = col.placeholder || '';
+            flatpickr(input, {
+                mode: "range",
+                dateFormat: "Y/m/d",
+                onChange: fetchFilteredData
+            });
+            filterElement.appendChild(input);
+        } else {
+            const input = document.createElement('input');
+            input.id = col.id;
+            input.type = 'text';
+            input.placeholder = col.placeholder || '';
+            input.addEventListener('input', fetchFilteredData);
+            filterElement.appendChild(input);
+        }
+        filterRow.appendChild(filterElement);
+    });
+}
+
+
             function initializeHandsontable(data) {
+                const headers = getColumnHeadersByLanguage(currentLang); // Use static headers based on the selected language
                 hot = new Handsontable(container, {
                     data: data,
-                    colHeaders: [
-                        'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 'Sub Notes', 'Transaction Description',
-                        'Country Used', 'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
-                    ],
+                    colHeaders: headers,
                     columns: [
                         { data: 'date', type: 'date', dateFormat: 'YYYY/MM/DD' },
                         { data: 'segment' },
@@ -223,49 +315,56 @@
             }
 
             function fetchFilteredData() {
-                const filters = {
-                    date: document.getElementById('dateFilter').value,
-                    segment: document.getElementById('segmentFilter').value,
-                    type: document.getElementById('typeFilter').value,
-                    sub_type: document.getElementById('subTypeFilter').value,
-                    category: document.getElementById('categoryFilter').value,
-                    sub_category: document.getElementById('subCategoryFilter').value,
-                    details: document.getElementById('detailsFilter').value,
-                    notes: document.getElementById('notesFilter').value,
-                    sub_notes: document.getElementById('subNotesFilter').value,
-                    transaction_description: document.getElementById('transactionDescriptionFilter').value,
-                    country: document.getElementById('countryFilter').value,
-                    account_name: document.getElementById('accountFilter').value,
-                    currency: document.getElementById('currencyFilter').value,
-                    payeer: document.getElementById('payeerFilter').value,
-                    paid_to: document.getElementById('paidToFilter').value,
-                    amount: document.getElementById('amountFilter').value
-                };
+    const filters = {
+        date: document.getElementById('dateFilter').value,
+        segment: document.getElementById('segmentFilter').value,
+        type: document.getElementById('typeFilter').value,
+        sub_type: document.getElementById('subTypeFilter').value,
+        category: document.getElementById('categoryFilter').value,
+        sub_category: document.getElementById('subCategoryFilter').value,
+        country: document.getElementById('countryFilter').value,
+        account_name: document.getElementById('accountFilter').value,
+        currency: document.getElementById('currencyFilter').value,
+        payeer: document.getElementById('payeerFilter').value,
+        paid_to: document.getElementById('paidToFilter').value
+    };
 
-                fetch('/filter_transactions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(filters)
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.status === 'success') {
-                        console.log(result.data)
-                        hot.loadData(result.data);
-                        updateRowCount(result.data.length);
-                        document.getElementById('filtersInput').value = JSON.stringify(filters);
-                    } else {
-                        console.error('Error fetching filtered data:', result.message);
-                    }
-                });
-            }
+
+
+    console.log("Filters:", filters);
+
+    // Translate filter values to English if the current language is Arabic
+    const translatedFilters = translateDropdownValuesToEnglish(filters);
+    console.log("Translated filters:", translatedFilters);
+
+    fetch('/filter_transactions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(translatedFilters)  // Send translated filter values
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.status === 'success') {
+            // Translate the result data back to the current language if necessary
+            const translatedData = translateData(result.data);
+            hot.loadData(translatedData);
+            updateRowCount(result.data.length);
+
+            // Store the current filters for later use
+            document.getElementById('filtersInput').value = JSON.stringify(filters);
+        } else {
+            console.error('Error fetching filtered data:', result.message);
+        }
+    });
+}
+
 
 
             
             function updateRowCount(count) {
-                document.getElementById('rowCount').textContent = `Row Count: ${count}`;
+                document.getElementById('rowCount').textContent = `${count}`;
             }
 
             function showMessage(message, type) {
@@ -283,6 +382,14 @@
             document.getElementById("resetButton").addEventListener("click", function() {
                 location.reload();
             });
+        });
+
+
+
+        document.getElementById('downloadButton').addEventListener('click', () => {
+            const lang = localStorage.getItem('lang') || 'en';  // Get the language from local storage
+            const downloadUrl = `/download_filtered`;  // Add the language as a query parameter
+            window.location.href = downloadUrl;  // Trigger the download
         });
 
 
