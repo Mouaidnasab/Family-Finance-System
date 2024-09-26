@@ -775,6 +775,9 @@ def call_procedure_update_transactions_temp():
 
         # Commit the transaction after updates
         conn.commit()
+        check_for_new_logs_optimized()
+
+
         flash('Auto-fill completed successfully!', 'message')
 
     except Exception as e:
@@ -787,6 +790,8 @@ def call_procedure_update_transactions_temp():
         # Close the cursor and connection
         cursor.close()
         conn.close()
+
+
 
     return redirect(url_for('transactions'))
 
