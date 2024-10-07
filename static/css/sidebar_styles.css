@@ -44,16 +44,17 @@
     bottom: 20px;
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content:first baseline;
     align-items: center;
 }
 
 .profile-btn {
     flex-grow: 1; /* Take up remaining space */
+    min-width: 200px;
     margin-right: 10px; /* Space between profile and settings */
     padding: 10px;
     background-color: var(--button-bg-color);
-    border: 1px solid var(--button-border-color);
+    border: none;
     color: var(--button-text-color);
     text-align: center;
     font-size: 16px;
@@ -67,14 +68,14 @@
 }
 
 .settings-btn {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: var(--button-bg-color);
-    border: 1px solid var(--button-border-color);
+    border: none;
     color: var(--button-text-color);
     border-radius: 8px; /* Rounded corners */
     cursor: pointer;
@@ -96,7 +97,7 @@
     padding: 10px;
     margin: 10px 0;
     background-color: var(--button-bg-color);
-    border: 1px solid var(--button-border-color);
+    border: none;
     color: var(--button-text-color);
     text-align: left;
     font-size: 16px;

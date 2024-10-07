@@ -16,6 +16,10 @@ import json
 import pandas as pd
 import re
 
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.worksheet.table import Table, TableStyleInfo
+
 
 import jwt
 import time
@@ -45,6 +49,7 @@ iframeUrl = METABASE_SITE_URL + "/embed/dashboard/" + token + "#bordered=true&ti
 # Flask app configuration
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
+
 
 
 
@@ -95,6 +100,47 @@ def translate_dataframe(df, target_lang):
 
     return df
 
+
+
+def translate_dropdown_data(dropdown_data, target_lang):
+    # Translate each dropdown field using the translation dictionary
+    for key, values in dropdown_data.items():
+        # Translate each value in the dropdown using the translate_value function
+        dropdown_data[key] = [translate_value(value, target_lang) for value in values]
+    return dropdown_data
+
+    return jsonify({'status': 'success', 'data': dropdown_data})
+
+def translate_rows_to_arabic(rows):
+    columns_to_translate = ['segment', 'type', 'sub_type', 'category', 'sub_category', 'currency', 
+                            'country_used', 'account_name', 'payeer', 'paid_to']
+
+    for row in rows:
+        for col in columns_to_translate:
+            if col in row:
+                # Translate the value back to Arabic using the `translate_value` function
+                row[col] = translate_value(row[col], 'ar')
+    
+    return rows
+
+
+
+def translate_filters_to_english(filters):
+    translated_filters = {}
+    
+    for key, value in filters.items():
+        # Translate only if value is not empty
+        if value:
+            if isinstance(value, list):
+                # If the value is a list, translate each element
+                translated_filters[key] = [translate_value(v, 'en') for v in value]
+            else:
+                # Translate single value
+                translated_filters[key] = translate_value(value, 'en')
+        else:
+            translated_filters[key] = value  # Keep the original value if empty
+
+    return translated_filters
 
 
 
@@ -170,12 +216,15 @@ class User(UserMixin):
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 
 # Load user
 @login_manager.user_loader
 def load_user(user_id):
     return User.get_by_id(int(user_id))
+
+
 
 
 # SocketIO Events
@@ -841,16 +890,23 @@ def uncheck_all():
         conn.close()
 
 
-
 @app.route('/dropdown_data')
 @login_required
 def dropdown_data():
     try:
         # Establish a connection to the MySQL database
         conn = mysql.connector.connect(**config.db_config)
-
-        # Use the fetch_dropdown_data function to get dropdown data
+        
+        # Fetch dropdown data from the database
         dropdown_data = fetch_dropdown_data(conn)
+        
+        # Check the current language, which you might get from the session or a request parameter
+        lang = request.args.get('lang', 'e')  # Default to 'en' if not provided
+        print(lang)
+
+        # If the language is Arabic, translate the dropdown options
+        if lang == 'ar':
+            dropdown_data = translate_dropdown_data(dropdown_data, 'ar')
 
     except Exception as e:
         # Return error response in case of any exception
@@ -862,6 +918,7 @@ def dropdown_data():
 
     # Return success response with the fetched dropdown data
     return jsonify({'status': 'success', 'data': dropdown_data})
+
 
 @app.route('/add_rows', methods=['POST'])
 @login_required
@@ -1094,7 +1151,13 @@ def finalize_transactions():
 @login_required
 def filter_transactions():
     filters = request.json
-    print('Received filters:', filters)  # Debugging line to print received filters
+    lang = request.args.get('lang', 'en')  # Get the language from request, default to English
+
+    # Translate filters back to English if the current language is Arabic
+    if lang == 'ar':
+        filters = translate_filters_to_english(filters)
+
+    # print('Received filters:', filters)  # Debugging line to print received filters
     query = '''
         SELECT 
             Transactions.date, 
@@ -1112,6 +1175,7 @@ def filter_transactions():
             Accounts.currency, 
             payeer.name as payeer, 
             paid_to.name as paid_to, 
+            CONCAT(members.first_name, ' ', members.last_name) AS to_whom,
             Amounts.amount
         FROM 
             Transactions
@@ -1125,6 +1189,141 @@ def filter_transactions():
             Accounts as payeer ON Transactions.payeer_id = payeer.account_id
         LEFT JOIN 
             Accounts as paid_to ON Transactions.paid_to_id = paid_to.account_id
+        LEFT JOIN
+            Members AS members ON Transactions.to_whom_id = members.member_id
+        WHERE 1=1
+    '''
+
+    # print('Query:', query)
+
+    query_params = []
+    for column, value in filters.items():
+        if value:
+            table_column = column.lower()
+            if column in ['date']:
+                table_column = f'Transactions.{table_column}'
+                date_range = value.split(' to ')
+                if len(date_range) == 2:
+                    query += f' AND {table_column} BETWEEN %s AND %s'
+                    query_params.extend(date_range)
+                continue
+            elif column in ['segment', 'type', 'sub_type', 'category', 'sub_category']:
+                table_column = f'Transactions.{table_column}'
+            elif column in ['details', 'notes', 'sub_notes', 'transaction_description']:
+                table_column = f'Details.{table_column}'
+            elif column == 'country':
+                table_column = f'Transactions.country_used'
+            elif column in ['currency']:
+                table_column = f'Accounts.{table_column}'
+            elif column in ['account_name']:
+                table_column = f'Accounts.name'
+            elif column in ['payeer']:
+                table_column = f'payeer.name'
+            elif column == 'paid_to':
+                # Handle both 'paid_to' and 'to_whom' for filtering
+                table_column_paid_to = 'paid_to.name'
+                table_column_to_whom = "CONCAT(members.first_name, ' ', members.last_name)"
+                if isinstance(value, list):
+                    # Use IN clause for both fields
+                    placeholders = ','.join(['%s'] * len(value))
+                    query += f' AND ({table_column_paid_to} IN ({placeholders}) OR {table_column_to_whom} IN ({placeholders}))'
+                    query_params.extend(value * 2)  # Double the value list to use for both paid_to and to_whom
+                else:
+                    # Use single value equality for both fields
+                    query += f' AND ({table_column_paid_to} = %s OR {table_column_to_whom} = %s)'
+                    query_params.extend([value, value])
+            elif column == 'amount':
+                table_column = f'Amounts.{table_column}'
+
+            if column == 'paid_to':
+                continue  # Skip paid_to column in the query
+            else:
+                # Correctly handle list values for IN clause
+                if isinstance(value, list):
+                    placeholders = ','.join(['%s'] * len(value))
+                    query += f' AND {table_column} IN ({placeholders})'
+                    query_params.extend(value)
+                else:
+                    query += f' AND {table_column} = %s'
+                    query_params.append(value)
+
+    # print('Final query:', query)  # Debugging line to print the final query
+    # print('Query params:', query_params)  # Debugging line to print the query parameters
+
+    try:
+        conn = mysql.connector.connect(**config.db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, query_params)
+        rows = cursor.fetchall()
+
+        # print('Rows:', rows)  # Debugging line to print the fetched rows
+    except Exception as e:
+        print('Error:', str(e))  # Debugging line to print errors
+        return jsonify({'status': 'error', 'message': str(e)})
+    finally:
+        cursor.close()
+        conn.close()
+
+    # Replace None with empty string
+    for row in rows:
+        for key, value in row.items():
+            if value is None:
+                row[key] = ''
+
+
+    # Translate data to Arabic if the language is Arabic
+    if lang == 'ar':
+        rows = translate_rows_to_arabic(rows)
+
+    response = jsonify({'status': 'success', 'data': rows})
+    response.headers.add('Content-Type', 'application/json')
+    return response
+
+
+@app.route('/download_filtered', methods=['POST'])
+@login_required
+def download_filtered():
+    filters = request.json
+    print('Filters:', filters)
+    lang = request.args.get('lang', 'en')  # Get the language from request, default to English
+
+    # Translate filters back to English if the current language is Arabic
+    if lang == 'ar':
+        filters = translate_filters_to_english(filters)
+
+    query = '''
+        SELECT 
+            Transactions.date, 
+            Transactions.segment, 
+            Transactions.type, 
+            Transactions.sub_type, 
+            Transactions.category, 
+            Transactions.sub_category, 
+            Details.details, 
+            Details.notes, 
+            Details.sub_notes, 
+            Details.transaction_description, 
+            Transactions.country_used, 
+            Accounts.name as account_name, 
+            Accounts.currency, 
+            payeer.name as payeer, 
+            paid_to.name as paid_to, 
+            CONCAT(members.first_name, ' ', members.last_name) AS to_whom,
+            Amounts.amount
+        FROM 
+            Transactions
+        LEFT JOIN 
+            Details ON Transactions.transaction_id = Details.transaction_id
+        LEFT JOIN 
+            Amounts ON Transactions.transaction_id = Amounts.transaction_id
+        LEFT JOIN 
+            Accounts ON Transactions.account_id = Accounts.account_id
+        LEFT JOIN 
+            Accounts as payeer ON Transactions.payeer_id = payeer.account_id
+        LEFT JOIN 
+            Accounts as paid_to ON Transactions.paid_to_id = paid_to.account_id
+        LEFT JOIN
+            Members AS members ON Transactions.to_whom_id = members.member_id
         WHERE 1=1
     '''
 
@@ -1151,102 +1350,33 @@ def filter_transactions():
                 table_column = f'Accounts.name'
             elif column in ['payeer']:
                 table_column = f'payeer.name'
-            elif column in ['paid_to']:
-                table_column = f'paid_to.name'
+            elif column == 'paid_to':
+                # Handle both 'paid_to' and 'to_whom' for filtering
+                table_column_paid_to = 'paid_to.name'
+                table_column_to_whom = "CONCAT(members.first_name, ' ', members.last_name)"
+                if isinstance(value, list):
+                    # Use IN clause for both fields
+                    placeholders = ','.join(['%s'] * len(value))
+                    query += f' AND ({table_column_paid_to} IN ({placeholders}) OR {table_column_to_whom} IN ({placeholders}))'
+                    query_params.extend(value * 2)  # Double the value list to use for both paid_to and to_whom
+                else:
+                    # Use single value equality for both fields
+                    query += f' AND ({table_column_paid_to} = %s OR {table_column_to_whom} = %s)'
+                    query_params.extend([value, value])
             elif column == 'amount':
                 table_column = f'Amounts.{table_column}'
 
-            query += f' AND {table_column} LIKE %s'
-            query_params.append(f'%{value}%')
-
-    print('Final query:', query)  # Debugging line to print the final query
-    print('Query params:', query_params)  # Debugging line to print the query parameters
-
-    try:
-        conn = mysql.connector.connect(**config.db_config)
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(query, query_params)
-        rows = cursor.fetchall()
-    except Exception as e:
-        print('Error:', str(e))  # Debugging line to print errors
-        return jsonify({'status': 'error', 'message': str(e)})
-    finally:
-        cursor.close()
-        conn.close()
-
-    # Replace None with empty string
-    for row in rows:
-        for key, value in row.items():
-            if value is None:
-                row[key] = ''
-
-    response = jsonify({'status': 'success', 'data': rows})
-    response.headers.add('Content-Type', 'application/json')
-    return response
-
-
-
-@app.route('/download_filtered', methods=['GET'])
-@login_required
-def download_filtered():
-    filters = request.args
-
-    query = '''
-        SELECT 
-            Transactions.date, 
-            Transactions.segment, 
-            Transactions.type, 
-            Transactions.sub_type, 
-            Transactions.category, 
-            Transactions.sub_category, 
-            Details.details, 
-            Details.notes, 
-            Details.sub_notes, 
-            Details.transaction_description, 
-            Transactions.country_used, 
-            Accounts.name as account_name, 
-            Accounts.currency, 
-            payeer.name as payeer, 
-            paid_to.name as paid_to, 
-            Amounts.amount
-        FROM 
-            Transactions
-        LEFT JOIN 
-            Details ON Transactions.transaction_id = Details.transaction_id
-        LEFT JOIN 
-            Amounts ON Transactions.transaction_id = Amounts.transaction_id
-        LEFT JOIN 
-            Accounts ON Transactions.account_id = Accounts.account_id
-        LEFT JOIN 
-            Accounts as payeer ON Transactions.payeer_id = payeer.account_id
-        LEFT JOIN 
-            Accounts as paid_to ON Transactions.paid_to_id = paid_to.account_id
-        WHERE 1=1
-    '''
-
-    query_params = []
-    for column, value in filters.items():
-        if value:
-            table_column = column.lower()
-            if column in ['segment', 'type', 'sub_type', 'category', 'sub_category']:
-                table_column = f'Transactions.{table_column}'
-            elif column in ['details', 'notes', 'sub_notes', 'transaction_description']:
-                table_column = f'Details.{table_column}'
-            elif column == 'country':
-                table_column = f'Transactions.country_used'
-            elif column in ['currency']:
-                table_column = f'Accounts.{table_column}'
-            elif column in ['account_name']:
-                table_column = f'Accounts.name'
-            elif column in ['payeer']:
-                table_column = f'payeer.name'
-            elif column in ['paid_to']:
-                table_column = f'paid_to.name'
-            elif column == 'amount':
-                table_column = f'Amounts.{table_column}'
-
-            query += f' AND {table_column} LIKE %s'
-            query_params.append(f'%{value}%')
+            if column == 'paid_to':
+                continue  # Skip paid_to column in the query
+            else:
+                # Correctly handle list values for IN clause
+                if isinstance(value, list):
+                    placeholders = ','.join(['%s'] * len(value))
+                    query += f' AND {table_column} IN ({placeholders})'
+                    query_params.extend(value)
+                else:
+                    query += f' AND {table_column} = %s'
+                    query_params.append(value)
 
     try:
         conn = mysql.connector.connect(**config.db_config)
@@ -1261,15 +1391,91 @@ def download_filtered():
         cursor.close()
         conn.close()
 
-    output = StringIO()
-    csv_writer = csv.writer(output)
-    csv_writer.writerow(columns)
-    csv_writer.writerows(rows)
-    output.seek(0)
-    
-    byte_output = BytesIO(output.getvalue().encode('utf-8'))
-    return send_file(byte_output, download_name='Filtered_Transactions.csv', as_attachment=True, mimetype='text/csv')
+    # Convert each row to a list and combine 'paid_to' and 'to_whom' into a single column
+    updated_rows = []
+    for row in rows:
+        row = list(row)  # Convert the tuple to a list so we can modify it
+        paid_to = row[14]  # Assuming 'paid_to' is in index 14
+        to_whom = row[15]  # Assuming 'to_whom' is in index 15
+        row[14] = f"{paid_to or ''} {to_whom or ''}".strip()  # Combine and replace 'paid_to' with the combined value
+        del row[15]  # Remove the 'to_whom' column from the row
+        updated_rows.append(row)
 
+            # Define English and Arabic headers
+    headersEnglishMachine = [
+        'date', 'segment', 'type', 'sub_type', 'category', 'sub_category', 'details', 'notes', 
+        'sub_notes', 'transaction_description',  'country_used', 
+        'account_name', 'currency', 'payeer', 'paid_to', 'amount'
+    ]
+
+    # Define English and Arabic headers
+    headersEnglish = [
+        'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
+        'Sub Notes', 'Transaction Description',  'Country Used', 
+        'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
+    ]
+
+
+    headersArabic = [
+        'التاريخ', 'الشريحة', 'النوع', 'النوع الفرعي', 'التصنيف', 'التصنيف الفرعي', 'التفاصيل', 'الملاحظات', 
+        'الملاحظات فرعية', 'وصف العملية',  'بلد الاستخدام', 
+        'اسم الحساب', 'العملة', 'الدافع', 'المدفوع اليه', 'المبلغ'
+    ]
+
+    headers =  headersEnglishMachine
+
+    # Create a DataFrame from the rows
+    df = pd.DataFrame(updated_rows, columns=headers)
+
+    # Select the headers based on the selected language
+    headers = headersArabic if lang == 'ar' else headersEnglish
+
+
+    # Translate rows to Arabic if the language is Arabic
+    if lang == 'ar':
+        df = translate_dataframe(df, 'ar')
+        print(df)
+
+    # Create an Excel workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Filtered Transactions"
+
+    # Write DataFrame to Excel
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+
+    # Define table range
+    table_range = f'A1:{chr(64 + len(headers))}{len(df) + 1}'  # Columns A to the last column, rows 1 to n+1
+    # Auto-adjust column widths based on the max length of content in each column
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                max_length = max(max_length, len(str(cell.value)))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+
+    # Create a table in Excel
+    table = Table(displayName="FilteredTransactions", ref=table_range)
+    style = TableStyleInfo(
+        name="TableStyleMedium9", showFirstColumn=False, showLastColumn=False,
+        showRowStripes=True
+    )
+    table.tableStyleInfo = style
+    ws.add_table(table)
+
+    # Save Excel file to a BytesIO stream
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    # Send the file as a response
+    return send_file(output, download_name='Filtered_Transactions.xlsx', as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host="0.0.0.0", port=4300)

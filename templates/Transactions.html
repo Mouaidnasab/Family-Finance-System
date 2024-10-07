@@ -11,6 +11,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/pikaday.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@handsontable/pikaday@1.0.0/css/pikaday.min.css">
     <link rel="stylesheet" href="/static/css/sidebar_styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.3/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pikaday@1.8.0/pikaday.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday@1.8.0/css/pikaday.css">
+
 
 
         <!-- Toastr CSS -->
@@ -165,6 +169,8 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <!-- jQuery (Ensure it's loaded before other scripts that depend on it) -->
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.3/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pikaday@1.8.0/pikaday.min.js"></script>
     <script src="/static/js/scripts.js"></script>
     <script type="text/javascript" src="/static/js/language.js"> </script>
     <script src="/static/js/sidebar_transactions.js"></script>
@@ -180,13 +186,13 @@
             const headersEnglish = [
             '', 'Date', 'Segment', 'Type', 'Sub Type', 'Category', 'Sub Category', 'Details', 'Notes', 
             'Sub Notes', 'Transaction Description', 'Country Withdraw', 'Country Used', 
-            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount', 'Status'
+            'Account Name', 'Currency', 'Payeer', 'Paid To', 'Amount'
             ];
 
             const headersArabic = [
-                '', 'التاريخ', 'القطعة', 'النوع', 'النوع الفرعي', 'الفئة', 'الفئة الفرعية', 'التفاصيل', 'ملاحظات', 
-                'ملاحظات فرعية', 'وصف المعاملة', 'بلد السحب', 'البلد المستخدم', 
-                'اسم الحساب', 'العملة', 'المدفوع', 'المدفوع إلى', 'المبلغ', 'الحالة'
+                '', 'التاريخ', 'الشريحة', 'النوع', 'النوع الفرعي', 'التصنيف', 'التصنيف الفرعي', 'التفاصيل', 'الملاحظات', 
+                'الملاحظات فرعية', 'وصف العملية', 'بلد السحب', 'بلد الاستخدام', 
+                'اسم الحساب', 'العملة', 'الدافع', 'المدفوع اليه', 'المبلغ'
             ];
 
             // Use static headers based on current language
@@ -271,17 +277,10 @@
                         showToast('error', 'Failed to fetch transaction data.');
                     }
 
-                    // Initialize or update Handsontable with translated data and dropdowns
-                    if (hot) {
-                        hot.updateSettings({
-                            data: tableData,
-                            columns: generateColumnsWithTranslatedDropdowns(dropdownData), // Pass translated dropdowns
-                        });
-                        hot.render();
-                        console.log('Handsontable data loaded.');
-                    } else {
-                        initializeHandsontable(tableData, dropdownData);
-                    }
+                    initializeHandsontable(tableData, dropdownData);
+                    hot.validateCells();
+
+        
 
                     // Join the room for real-time updates
                     const room = `Transactions_Temp_${currentUserUsername}`;
@@ -361,7 +360,7 @@
                             checkedTemplate: 1,
                             uncheckedTemplate: 0,
                         },
-                        {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD'},
+                        {data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD', correctFormat: true},
                         {data: 'segment', type: 'dropdown', source: translatedDropdownData.segment, allowInvalid: false},
                         {data: 'type', type: 'dropdown', source: translatedDropdownData.type, allowInvalid: false},
                         {data: 'sub_type', type: 'dropdown', source: translatedDropdownData.sub_type, allowInvalid: false},
@@ -537,14 +536,22 @@
                 socket.on('data_updated', (data) => {
                     console.log('Data updated:', data);
                     if (data.room === `Transactions_Temp_${currentUserUsername}`) {
+                        console.log('Data received for room:', data.room);
                         // Fetch the updated data and refresh Handsontable
                         fetch('/get_transactions_data')
                             .then(response => response.json())
                             .then(result => {
                                 if (result.status === 'success') {
                                     tableData = translateData(result.data);
-                                    hot.loadData(tableData);
-                                    hot.render();
+                                    console.log('Data fekhjugfdxcfghvbtched successfully:', tableData);
+                                    for (let row = 0; row < tableData.length; row++) {
+                                        console.log('Updating row:', row);
+                                        for (let col = 0; col < tableData[row].length; col++) {
+                                            console.log('Updating cell:', row, col);
+                                            hot.setDataAtCell(row, col, tableData[row][col], 'customUpdate'); // 'customUpdate' is a source tag for tracking
+                                        }
+                                    }
+                                    hot.validateCells();
                                     updateRowCount(tableData.length);
                                     showToast('info', 'Transactions data has been updated.');
                                     console.log('Handsontable data refreshed.');
@@ -612,27 +619,7 @@
             // Join the user's room for real-time updates
             joinRoom(`Transactions_Temp_${currentUserUsername}`);
 
-            // Auto-refresh Handsontable data every 30 seconds (optional, since WebSockets handle real-time updates)
-            /*
-            setInterval(function() {
-                fetch('/get_transactions_data')
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.status === 'success') {
-                            tableData = translateData(result.data);
-                            hot.loadData(tableData);
-                            hot.render();
-                            updateRowCount(tableData.length);
-                            console.log('Handsontable data refreshed.');
-                        } else {
-                            console.error('Error fetching transaction data:', result.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error during data refresh:', error);
-                    });
-            }, 30000);  // 30 seconds
-            */
+
         });
 
 

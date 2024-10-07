@@ -273,13 +273,13 @@
         "التفاصيل": "Details",
         "الملاحظات": "Notes",
         "الملاحظات الفرعية": "Sub Notes",
-        "وصف المعاملة": "Transaction Description",
+        "وصف العملية": "Transaction Description",
         "بلد الاستخدام": "Country Used",
         "بلد السحب": "Country Withdraw",
         "اسم الحساب": "Account Name",
         "العملة": "Currency",
         "المبلغ": "Amount",
-        "المستفيد": "Paid To",
+        "المدفوع اليه": "Paid To",
         "إعادة تعيين الفلاتر": "Reset Filters",
         "التقارير": "Reports",
         "المعاملات": "Transactions",
@@ -295,7 +295,8 @@
         "تحديد الكل": "Check All",
         "الغاء التحديد على الكل": "Uncheck All",
         "أحمد نسب": "Ahmad Nasab",
-        "None":""
+        "None":"",
+        "لم يتم العثور على نتائج":"no results found"
       },
       
     "ar": {
@@ -583,13 +584,13 @@
       "Details": "التفاصيل",
       "Notes": "الملاحظات",
       "Sub Notes": "الملاحظات الفرعية",
-      "Transaction Description": "وصف المعاملة",
+      "Transaction Description": "وصف العملية",
       "Country Withdraw": "بلد السحب",
       "Country Used": "بلد الاستخدام",
       "Account Name": "اسم الحساب",
       "Currency": "العملة",
       "Amount": "المبلغ",
-      "Paid To": "المستفيد",
+      "Paid To": "المدفوع اليه",
       "Reset Filters": "إعادة تعيين الفلاتر",
       "Reports": "التقارير",
       "Transactions": "المعاملات",
@@ -600,7 +601,8 @@
       "Template": "القالب",
       "Submit": "تقديم",
       "Autofill": "تعبئة تلقائية",
-      "Upload": "تحميل"
+      "Upload": "تحميل",
+      "No results found": "لم يتم العثور على نتائج"
     }
   }
   
