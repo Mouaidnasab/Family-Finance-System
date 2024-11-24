@@ -9,6 +9,7 @@ db_config = {
     'port': 3333
 }
 
+
 # # database config tailscale
 # db_config = {
 #     'user': 'mouaid_admin',
