@@ -42,14 +42,14 @@ def save_exchange_rates(rates):
     conn.commit()
     conn.close()
 
-def main():
+def ratesgenerator():
     last_date = get_last_date()
     if last_date:
         start_date = last_date + timedelta(days=1)
     else:
         start_date = datetime.strptime('2022-01-01', '%Y-%m-%d').date()
 
-    end_date = date.today()
+    end_date = date.today()-timedelta(days=1)
 
     current_date = start_date
     while current_date <= end_date:
@@ -59,5 +59,5 @@ def main():
         current_date += timedelta(days=1)
 
 if __name__ == '__main__':
-    main()
+    ratesgenerator()
 

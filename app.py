@@ -15,6 +15,7 @@ from functions import populate_unique_values, fetch_dropdown_data, validate_tran
 import json
 import pandas as pd
 import re
+from rates import ratesgenerator
 
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -24,7 +25,7 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 import jwt
 import time
 
-
+ratesgenerator()
 
 # Metabase variables
 METABASE_SITE_URL = "http://192.168.0.103:3000"
@@ -251,7 +252,7 @@ def login():
             login_user(user)
             return redirect(url_for('dashboard'))  # Adjust this as necessary
         else:
-            flash('Invalid username or password')
+            flash('Invalid username or password', 'error')
     return render_template('Login.html')
 
 
@@ -1014,9 +1015,17 @@ def finalize_transactions():
             ''', (account_name, currency, segment))
 
             account_id = cursor.fetchone()
+
+            cursor.execute('''
+                SELECT max(account_id) FROM Accounts 
+            ''')
+            external_account_id = cursor.fetchone()
             if account_id:
                 return account_id[0]
             else:
+                if external_account_id['max(account_id)'] >=100000:
+                    external_account_counter = external_account_id['max(account_id)']+1
+
                 account_id = external_account_counter
                 cursor.execute('''
                     INSERT INTO Accounts (account_id, name, currency, segment, country) VALUES (%s, %s, %s, %s, %s)
@@ -1027,7 +1036,7 @@ def finalize_transactions():
         # Helper function to split account name and currency
         def split_account_name_currency(account_str):
             parts = account_str.rsplit(' ', 1)
-            if len(parts) == 2 and parts[1] in ['SR', 'USD', 'BGN', 'TRY', 'SRY']:
+            if len(parts) == 2 and parts[1] in ['SR', 'USD', 'BGN', 'TRY', 'SRY', 'EUR', 'GBP']:
                 return parts[0], parts[1]
             return account_str, None
 
@@ -1072,6 +1081,7 @@ def finalize_transactions():
                         paid_to_id = get_or_create_external_account(paid_to_name, paid_to_currency, "external", "General")
                         accounts_dict[paid_to_key] = paid_to_id
 
+
                 # Fetch exchange rates for the transaction date
                 cursor.execute('''
                     SELECT usd_to_bgn, usd_to_eur, usd_to_try, bgn_to_usd, eur_to_usd, try_to_usd
@@ -1080,11 +1090,12 @@ def finalize_transactions():
                 ''', (row['date'],))
                 exchange_rates = cursor.fetchone()
                 if not exchange_rates:
-                    continue  # Skip if exchange rates are not found for the date
+                    raise ValueError("Exchange rates not available.")
 
                 # Calculate VAT
                 country_used_lower = row['country_used'].lower()
                 vat = vat_percentages.get(country_used_lower, 0)
+
 
                 # Calculate amounts in USD and SR
                 amount_in_usd = None
@@ -1106,6 +1117,7 @@ def finalize_transactions():
                         amount_in_usd = amount * sry_to_usd_rate
 
                 amount_in_sr = amount_in_usd * 3.75 if amount_in_usd else None
+
 
                 # Insert into Transactions table
                 cursor.execute('''
@@ -1391,15 +1403,25 @@ def download_filtered():
         cursor.close()
         conn.close()
 
-    # Convert each row to a list and combine 'paid_to' and 'to_whom' into a single column
+    # Create an updated_rows list and format the date in 'dd/mm/yyyy' format
     updated_rows = []
     for row in rows:
         row = list(row)  # Convert the tuple to a list so we can modify it
+        
+        # Format the date (assuming it's the first column, index 0)
+        if row[0]:
+            row[0] = datetime.strptime(str(row[0]), '%Y-%m-%d').strftime('%d/%m/%Y')
+        
+        # Combine 'paid_to' and 'to_whom' into a single column
         paid_to = row[14]  # Assuming 'paid_to' is in index 14
         to_whom = row[15]  # Assuming 'to_whom' is in index 15
         row[14] = f"{paid_to or ''} {to_whom or ''}".strip()  # Combine and replace 'paid_to' with the combined value
         del row[15]  # Remove the 'to_whom' column from the row
+        
         updated_rows.append(row)
+
+
+        
 
             # Define English and Arabic headers
     headersEnglishMachine = [
@@ -1429,20 +1451,25 @@ def download_filtered():
 
     # Select the headers based on the selected language
     headers = headersArabic if lang == 'ar' else headersEnglish
+    print(headers)
 
-
+    SheetName= "Filtered Transactions"
     # Translate rows to Arabic if the language is Arabic
     if lang == 'ar':
         df = translate_dataframe(df, 'ar')
+        SheetName= "العمليات المفلترة"
         print(df)
 
     # Create an Excel workbook
     wb = Workbook()
     ws = wb.active
-    ws.title = "Filtered Transactions"
+    ws.title = SheetName
+
+    # Write human-readable headers
+    ws.append(headers)
 
     # Write DataFrame to Excel
-    for r in dataframe_to_rows(df, index=False, header=True):
+    for r in dataframe_to_rows(df, index=False, header=False):
         ws.append(r)
 
     # Define table range
@@ -1463,7 +1490,7 @@ def download_filtered():
     # Create a table in Excel
     table = Table(displayName="FilteredTransactions", ref=table_range)
     style = TableStyleInfo(
-        name="TableStyleMedium9", showFirstColumn=False, showLastColumn=False,
+        name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
         showRowStripes=True
     )
     table.tableStyleInfo = style

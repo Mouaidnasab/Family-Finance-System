@@ -198,7 +198,7 @@ s
                 if (result.status === 'success') {
                     initializeFilters(result.data,currentLang, dictionary);
                     initializeHandsontable([]);
-                    hot.validateCells();
+                    
                 } else {
                     console.error('Error fetching dropdown data:', result.message);
                 }
@@ -222,6 +222,9 @@ s
         function getColumnHeadersByLanguage(language) {
             return language === 'en' ? headersEnglish : headersArabic;
         }
+
+
+        
 
 
         function initializeFilters(data, currentLang) {
@@ -305,8 +308,7 @@ s
                     data: data,
                     colHeaders: headers,
                     columns: [
-                        { data: 'date', type: 'date', dateFormat: 'YYYY-MM-DD',
-                    },
+                        { data: 'date', type: 'date', dateFormat: 'DD/MM/YYYY', correctFormat: true },
                         { data: 'segment' },
                         { data: 'type' },
                         { data: 'sub_type' },
@@ -376,6 +378,17 @@ s
     // Assuming `lang` is a global variable or fetched from local storage
     const lang = localStorage.getItem('lang') || 'en';  // Default to 'en' if not set
 
+    // Function to parse date strings and keep them in 'YYYY-MM-DD' format
+    function parseDates(data) {
+                    return data.map(row => {
+                        if (row.date && typeof row.date === 'string') {
+                            // Format the date string to 'YYYY-MM-DD' using moment.js
+                            row.date = moment(row.date).format('DD/MM/YYYY');
+                        }
+                        return row;
+                    });
+                }
+
     fetch(`/filter_transactions?lang=${lang}`, {
         method: 'POST',
         headers: {
@@ -386,7 +399,8 @@ s
     .then(response => response.json())
     .then(result => {
         if (result.status === 'success') {
-            hot.loadData(result.data);
+            tableData = parseDates(result.data);
+            hot.loadData(tableData);
             updateRowCount(result.data.length);
         } else {
             console.error('Error fetching filtered data:', result.message);

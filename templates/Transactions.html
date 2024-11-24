@@ -270,6 +270,7 @@
 
                     if (transactionsResult.status === 'success') {
                         tableData = translateData(transactionsResult.data);  // Translate the table data
+                        tableData = parseDates(tableData);
                         console.log('Transaction data fetched and translated successfully:', tableData);
                         updateRowCount(tableData.length);
                     } else {
@@ -337,6 +338,17 @@
                 });
 
                 return translatedData;
+            }
+
+            // Function to parse date strings and keep them in 'YYYY-MM-DD' format
+            function parseDates(data) {
+                return data.map(row => {
+                    if (row.date && typeof row.date === 'string') {
+                        // Format the date string to 'YYYY-MM-DD' using moment.js
+                        row.date = moment(row.date).format('YYYY-MM-DD');
+                    }
+                    return row;
+                });
             }
 
 
@@ -543,15 +555,8 @@
                             .then(result => {
                                 if (result.status === 'success') {
                                     tableData = translateData(result.data);
-                                    console.log('Data fekhjugfdxcfghvbtched successfully:', tableData);
-                                    for (let row = 0; row < tableData.length; row++) {
-                                        console.log('Updating row:', row);
-                                        for (let col = 0; col < tableData[row].length; col++) {
-                                            console.log('Updating cell:', row, col);
-                                            hot.setDataAtCell(row, col, tableData[row][col], 'customUpdate'); // 'customUpdate' is a source tag for tracking
-                                        }
-                                    }
-                                    hot.validateCells();
+                                    tableData = parseDates(tableData);
+                                    hot.loadData(tableData);
                                     updateRowCount(tableData.length);
                                     showToast('info', 'Transactions data has been updated.');
                                     console.log('Handsontable data refreshed.');
